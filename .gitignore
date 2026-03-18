@@ -1,0 +1,20 @@
+# Build
+**/bin
+**/obj
+
+# Environments
+.env
+
+# Docker
+**/volume
+
+# Vscode
+**/.vscode
+
+# AI
+CLAUDE.md
+
+# Logs
+**/logs
+**/log
+**/*.log
