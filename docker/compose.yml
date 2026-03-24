@@ -1,0 +1,21 @@
+services:
+    db:
+        hostname: db
+        container_name: mssql_db
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        restart: no
+        networks:
+        - server
+        environment:
+            ACCEPT_EULA: "Y"
+            SA_PASSWORD: ${DB_PASSWORD}
+            MSSQL_PID: "Express"
+        ports:
+            - "1433:1433"
+        volumes:
+            - ./volume/mssql:/var/opt/mssql
+
+networks:
+    server:
+        driver: bridge
+        name: server-network

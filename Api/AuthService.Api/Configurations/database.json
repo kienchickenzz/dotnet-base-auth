@@ -1,0 +1,5 @@
+{
+    "ConnectionStrings": {
+        "DefaultConnection": "Data Source=localhost,1433;Initial Catalog=db;User id=sa;Password=Pa55w.rd; TrustServerCertificate=True"
+    }
+}
