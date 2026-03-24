@@ -1,9 +1,11 @@
 using AuthService.Application;
 // using AuthService.Persistence;
+using AuthService.Infrastructure;
 // using BaseCleanArchitecture.Persistence.Initialization;
 using AuthService.Api.Configurations;
 using AuthService.Api.Extensions;
 using AuthService.Api.OpenApi;
+using AuthService.Identity;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,12 +25,13 @@ builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 builder.Services.AddApiServices();
 builder.Services.AddApplication();
 
-// builder.Services.AddInfrastructurePersistence(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastureIdentity(builder.Configuration);
 
 var app = builder.Build();
 
 // Initialize database (migrate + seed)
-// await app.Services.InitializeDatabaseAsync();
+await app.Services.InitializeDatabaseAsync();
 
 // if (app.Environment.IsDevelopment())
 // {
@@ -40,8 +43,12 @@ app.UseSwaggerExtension();
 app.UseRouting();
 // app.UseHttpsRedirection(); // Disable for dev
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.UseInfrastructure();
+app.UseInfrastructureIdentity();
 
 app.UseCustomExceptionHandler();
 

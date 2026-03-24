@@ -2,8 +2,8 @@
 
 using FluentValidation;
 
-using AuthService.Application.Common.ApplicationServices.Email;
-using AuthService.Application.Common.ApplicationServices.FileStorage;
+// using AuthService.Application.Common.ApplicationServices.Email;
+// using AuthService.Application.Common.ApplicationServices.FileStorage;
 using AuthService.Application.Common.Exceptions;
 using AuthService.Application.Features.Identities.Roles;
 using AuthService.Application.Features.Identities.Users;
@@ -54,12 +54,12 @@ internal partial class UserService
                     UserName = user.UserName,
                     Url = emailVerificationUri
                 };
-                var mailRequest = new MailRequest(
-                    new List<string> { user.Email },
-                    "Confirm Registration",
-                    _templateService.GenerateEmailTemplate("email-confirmation", eMailModel));
-                _jobService.Enqueue(() => _mailService.SendAsync(mailRequest, CancellationToken.None));
-                messages.Add($"Please check {user.Email} to verify your account!");
+                // var mailRequest = new MailRequest(
+                //     new List<string> { user.Email },
+                //     "Confirm Registration",
+                //     _templateService.GenerateEmailTemplate("email-confirmation", eMailModel));
+                // _jobService.Enqueue(() => _mailService.SendAsync(mailRequest, CancellationToken.None));
+                // messages.Add($"Please check {user.Email} to verify your account!");
             }
 
             await transaction.CommitAsync();
@@ -83,15 +83,15 @@ internal partial class UserService
         _ = user ?? throw new NotFoundException("User Not Found.");
 
         string currentImage = user.ImageUrl ?? string.Empty;
-        if (request.Image != null || request.IsDeleteCurrentImage)
-        {
-            user.ImageUrl = await _fileStorage.UploadAsync<ApplicationUser>(request.Image, FileType.Image);
-            if (request.IsDeleteCurrentImage && !string.IsNullOrEmpty(currentImage))
-            {
-                string root = Directory.GetCurrentDirectory();
-                _fileStorage.Remove(Path.Combine(root, currentImage));
-            }
-        }
+        // if (request.Image != null || request.IsDeleteCurrentImage)
+        // {
+        //     user.ImageUrl = await _fileStorage.UploadAsync<ApplicationUser>(request.Image, FileType.Image);
+        //     if (request.IsDeleteCurrentImage && !string.IsNullOrEmpty(currentImage))
+        //     {
+        //         string root = Directory.GetCurrentDirectory();
+        //         _fileStorage.Remove(Path.Combine(root, currentImage));
+        //     }
+        // }
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;

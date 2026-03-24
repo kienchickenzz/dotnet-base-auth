@@ -37,20 +37,20 @@ public static class DependencyInjection
         services.Configure<AdminSetting>(configuration.GetSection("SecuritySettings:AdminSettings"));
 
         services
-            .AddIdentity(configuration)
-            .AddJwtAuth(configuration)
-            .AddCurrentUser()
-            .AddPermissions();
+            ._AddIdentity(configuration)
+            ._AddJwtAuth(configuration)
+            ._AddCurrentUser()
+            ._AddPermissions();
 
         return services;
     }
 
-    public static IApplicationBuilder UseInfrastructureIndentity(this IApplicationBuilder builder) =>
+    public static IApplicationBuilder UseInfrastructureIdentity(this IApplicationBuilder builder) =>
         builder
-            .UseCurrentUser();
+            ._UseCurrentUser();
 
     // TODO: hàm không thật sự đăng ký DI mà seed dữ liệu, nên đặt chỗ khác??
-    public static async Task InitializeDatabasesAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    public static async Task InitializeDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
     {
         // Create a new scope to retrieve scoped services
         using var scope = services.CreateScope();
@@ -59,10 +59,10 @@ public static class DependencyInjection
             .InitializeAsync(cancellationToken);
     }
 
-    private static IApplicationBuilder UseCurrentUser(this IApplicationBuilder app) =>
+    private static IApplicationBuilder _UseCurrentUser(this IApplicationBuilder app) =>
         app.UseMiddleware<CurrentUserMiddleware>();
 
-    private static IServiceCollection AddIdentity(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection _AddIdentity(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
@@ -76,18 +76,18 @@ public static class DependencyInjection
         return services;
     }
         
-    private static IServiceCollection AddCurrentUser(this IServiceCollection services) =>
+    private static IServiceCollection _AddCurrentUser(this IServiceCollection services) =>
         services
             .AddScoped<CurrentUserMiddleware>()
             .AddScoped<ICurrentUser, CurrentUser>()
             .AddScoped(sp => (ICurrentUserInitializer) sp.GetRequiredService<ICurrentUser>());
 
-    private static IServiceCollection AddPermissions(this IServiceCollection services) =>
+    private static IServiceCollection _AddPermissions(this IServiceCollection services) =>
         services
             .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
             .AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-    private static IServiceCollection AddJwtAuth(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection _AddJwtAuth(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<JwtSettings>()
             .BindConfiguration($"SecuritySettings:{nameof(JwtSettings)}")

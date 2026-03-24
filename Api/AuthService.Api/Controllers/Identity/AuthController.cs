@@ -10,9 +10,9 @@ using AuthService.Application.Features.Identities.Authentication;
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly IAuthService _tokenService;
+    private readonly ITokenService _tokenService;
 
-    public AuthController(IAuthService tokenService) => _tokenService = tokenService;
+    public AuthController(ITokenService tokenService) => _tokenService = tokenService;
 
     /// <summary>
     /// Login

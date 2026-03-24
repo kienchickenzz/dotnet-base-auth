@@ -1,0 +1,14 @@
+{
+    "HangfireSettings": {
+        "Route": "/jobs",
+        "Dashboard": {
+            "AppPath": "/",
+            "StatsPollingInterval": 2000,
+            "DashboardTitle": "Jobs"
+        },
+        "Credentials": {
+            "User": "admin",
+            "Password": "Pa55w.rd"
+        }
+    }
+}

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using AuthService.Application.Common.ApplicationServices.BackgroundJob;
 using AuthService.Application.Common.ApplicationServices.Caching;
 // using AuthService.Application.Common.ApplicationServices.Email;
-using AuthService.Application.Common.ApplicationServices.FileStorage;
+// using AuthService.Application.Common.ApplicationServices.FileStorage;
 using AuthService.Application.Common.Exceptions;
 using AuthService.Application.Features.Identities.Roles;
 using AuthService.Application.Features.Identities.Users;
@@ -27,7 +27,7 @@ internal partial class UserService : IUserService
     private readonly ICacheKeyService _cacheKeys;
     private readonly IJobService _jobService;
     // private readonly IMailService _mailService;
-    private readonly IFileStorageService _fileStorage;
+    // private readonly IFileStorageService _fileStorage;
     // private readonly IEmailTemplateService _templateService;
     private readonly IPublisher _mediator;
 
@@ -40,7 +40,7 @@ internal partial class UserService : IUserService
         ICacheKeyService cacheKeys,
         IJobService jobService,
         // IMailService mailService,
-        IFileStorageService fileStorageService,
+        // IFileStorageService fileStorageService,
         // IEmailTemplateService templateService,
         IPublisher mediator)
     {
@@ -52,7 +52,7 @@ internal partial class UserService : IUserService
         _cacheKeys = cacheKeys;
         _jobService = jobService;
         // _mailService = mailService;
-        _fileStorage = fileStorageService;
+        // _fileStorage = fileStorageService;
         // _templateService = templateService;
         _mediator = mediator;
     }

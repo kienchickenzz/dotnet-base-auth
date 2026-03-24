@@ -10,12 +10,17 @@ namespace AuthService.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
+using Hangfire;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Options;
 
+using AuthService.Application.Common.ApplicationServices.BackgroundJob;
 using AuthService.Application.Common.ApplicationServices.Caching;
 using AuthService.Application.Common.ApplicationServices.Serializer;
 using AuthService.Infrastructure.Caching;
 using AuthService.Infrastructure.Serializer;
 using AuthService.Infrastructure.Settings;
+using AuthService.Infrastructure.BackgroundJobs;
 
 
 /// <summary>
@@ -31,6 +36,8 @@ public static class DependencyInjection
         services
             ._AddSettings(config)
             ._AddCaching(config)
+            ._AddServices()
+            ._AddBackgroundJobs(config)
             ._AddSerializer();
 
         return services;
@@ -39,6 +46,14 @@ public static class DependencyInjection
     private static IServiceCollection _AddSettings(this IServiceCollection services, IConfiguration config)
     {
         services.Configure<CacheSettings>(config.GetSection(CacheSettings.SectionName));
+        services.Configure<HangfireSettings>(config.GetSection(HangfireSettings.SectionName));
+
+        return services;
+    }
+
+    private static IServiceCollection _AddServices(this IServiceCollection services)
+    {
+        services.AddScoped<IJobService, HangfireService>();
 
         return services;
     }
@@ -105,5 +120,50 @@ public static class DependencyInjection
     {
         services.AddSingleton<ISerializerService, NewtonSoftService>();
         return services;
+    }
+
+    public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder)
+    {
+        builder._UseHangfireDashboard();
+
+        return builder;
+    }
+
+    internal static IServiceCollection _AddBackgroundJobs(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddHangfireServer();
+
+        services.AddHangfire(hangfireConfig => hangfireConfig
+            .UseSqlServerStorage(config.GetConnectionString("DefaultConnection"))
+            .UseFilter(new LogJobFilter()));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Hangfire dashboard.
+    /// </summary>
+    private static IApplicationBuilder _UseHangfireDashboard(this IApplicationBuilder app)
+    {
+        var settings = app.ApplicationServices
+            .GetRequiredService<IOptionsMonitor<HangfireSettings>>()
+            .CurrentValue;
+
+        var dashboardOptions = new DashboardOptions
+        {
+            AppPath = settings.Dashboard.AppPath,
+            StatsPollingInterval = settings.Dashboard.StatsPollingInterval,
+            DashboardTitle = settings.Dashboard.DashboardTitle,
+            Authorization = new[]
+            {
+                new HangfireCustomBasicAuthenticationFilter
+                {
+                    User = settings.Credentials.User,
+                    Pass = settings.Credentials.Password
+                }
+            }
+        };
+
+        return app.UseHangfireDashboard(settings.Route, dashboardOptions);
     }
 }
