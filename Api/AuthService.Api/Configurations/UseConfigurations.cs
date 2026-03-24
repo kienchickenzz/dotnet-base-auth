@@ -1,4 +1,4 @@
-﻿namespace BaseCleanArchitecture.Api.Configurations;
+﻿namespace AuthService.Api.Configurations;
 
 public static class UseConfigurations
 {

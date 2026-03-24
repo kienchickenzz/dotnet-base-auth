@@ -1,7 +1,7 @@
 namespace AuthService.Application.Features.Identities.Authentication;
 
 
-public interface IAuthService
+public interface ITokenService
 {
     Task<LoginResponse> GetTokenAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken);
 

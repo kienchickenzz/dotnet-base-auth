@@ -1,6 +1,6 @@
-using FluentValidation;
-
 namespace AuthService.Application.Features.Identities.Authentication;
+
+using FluentValidation;
 
 
 public record LoginRequest(string Email, string Password);

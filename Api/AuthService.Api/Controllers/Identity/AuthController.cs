@@ -1,8 +1,9 @@
 namespace AuthService.Api.Controllers.Identity;
 
-using AuthService.Application.Features.Identities.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
+using AuthService.Application.Features.Identities.Authentication;
 
 
 [ApiController]
