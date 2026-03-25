@@ -1,8 +1,8 @@
-﻿namespace AuthService.Application.Features.Identities;
+namespace AuthService.Application.Common.Extensions.Identities;
 
 using System.Security.Claims;
 
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Domain.Constants.Identity;
 
 
 public static class ClaimsPrincipalExtensions

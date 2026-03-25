@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 using AuthService.Application.Common.ApplicationServices.Caching;
 using AuthService.Application.Common.Exceptions;
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Domain.Constants.Identity;
 
 
 internal partial class UserService

@@ -3,7 +3,7 @@ namespace AuthService.Identity.Auth.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Domain.Constants.Identity;
 
 
 internal class PermissionPolicyProvider : IAuthorizationPolicyProvider

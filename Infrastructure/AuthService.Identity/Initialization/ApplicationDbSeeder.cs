@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using AuthService.Application.Features.Identities.Roles;
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.Auth;
 using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;

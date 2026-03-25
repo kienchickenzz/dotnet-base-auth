@@ -12,7 +12,8 @@ using System.Text;
 using AuthService.Application.Common.Exceptions;
 using AuthService.Application.Features.Identities;
 using AuthService.Application.Features.Identities.Authentication;
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Application.Common.Extensions.Identities;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.Auth.Jwt;
 using AuthService.Identity.Entities;
 

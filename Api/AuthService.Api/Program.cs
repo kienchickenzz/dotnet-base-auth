@@ -1,7 +1,5 @@
 using AuthService.Application;
-// using AuthService.Persistence;
 using AuthService.Infrastructure;
-// using BaseCleanArchitecture.Persistence.Initialization;
 using AuthService.Api.Configurations;
 using AuthService.Api.Extensions;
 using AuthService.Api.OpenApi;
@@ -11,11 +9,8 @@ using AuthService.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddHttpContextAccessor();
 
 builder.AddConfigurations();
@@ -33,15 +28,9 @@ var app = builder.Build();
 // Initialize database (migrate + seed)
 await app.Services.InitializeDatabaseAsync();
 
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwaggerExtension();
-// }
-
 app.UseSwaggerExtension();
 
 app.UseRouting();
-// app.UseHttpsRedirection(); // Disable for dev
 
 app.UseAuthentication();
 app.UseAuthorization();

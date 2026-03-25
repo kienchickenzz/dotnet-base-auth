@@ -10,7 +10,7 @@ using AuthService.Application.Common.ApplicationServices.Auth;
 using AuthService.Application.Common.Exceptions;
 using AuthService.Application.Common.Messaging;
 using AuthService.Application.Features.Identities.Roles;
-using AuthService.Domain.Constants.Authorization;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
 using AuthService.Identity.Events;
