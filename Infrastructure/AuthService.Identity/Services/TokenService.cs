@@ -9,11 +9,10 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
+using AuthService.Domain.Constants.Identity;
 using AuthService.Application.Common.Exceptions;
-using AuthService.Application.Features.Identities;
 using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Common.Extensions.Identity;
-using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.Auth.Jwt;
 using AuthService.Identity.Entities;
 

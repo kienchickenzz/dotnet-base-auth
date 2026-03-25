@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 
 using AuthService.Application.Common.ApplicationServices.Auth;
 using AuthService.Application.Features.Identities.Authentication;
+using AuthService.Application.Features.Identities.Authentication.Services;
 using AuthService.Application.Features.Identities.Roles;
 using AuthService.Application.Features.Identities.Users;
 using AuthService.Identity.Auth;
@@ -30,9 +31,14 @@ public static class DependencyInjection
         services.AddTransient<ApplicationDbInitializer>();
         services.AddTransient<ApplicationDbSeeder>();
 
+        // Legacy services (to be deprecated)
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IRoleService, RoleService>();
+
+        // New CQRS services
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
 
         services.Configure<AdminSetting>(configuration.GetSection("SecuritySettings:AdminSettings"));
 
