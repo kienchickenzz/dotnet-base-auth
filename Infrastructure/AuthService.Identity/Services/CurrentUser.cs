@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 using AuthService.Application.Common.ApplicationServices.Auth;
-using AuthService.Application.Features.Identities;
+using AuthService.Application.Common.Extensions.Identity;
 
 
 public class CurrentUser : ICurrentUser, ICurrentUserInitializer

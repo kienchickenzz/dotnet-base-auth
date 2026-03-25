@@ -1,4 +1,4 @@
-namespace AuthService.Application.Common.Extensions.Identities;
+namespace AuthService.Application.Common.Extensions.Identity;
 
 using System.Security.Claims;
 

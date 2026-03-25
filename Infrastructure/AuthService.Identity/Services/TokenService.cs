@@ -12,7 +12,7 @@ using System.Text;
 using AuthService.Application.Common.Exceptions;
 using AuthService.Application.Features.Identities;
 using AuthService.Application.Features.Identities.Authentication;
-using AuthService.Application.Common.Extensions.Identities;
+using AuthService.Application.Common.Extensions.Identity;
 using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.Auth.Jwt;
 using AuthService.Identity.Entities;
@@ -51,12 +51,12 @@ internal class TokenService : ITokenService
             throw new UnauthorizedException("E-Mail not confirmed.");
         }
 
-        return await GenerateTokensAndUpdateUser(user, ipAddress);
+        return await _GenerateTokensAndUpdateUser(user, ipAddress);
     }
 
     public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request, string ipAddress)
     {
-        var userPrincipal = GetPrincipalFromExpiredToken(request.Token);
+        var userPrincipal = _GetPrincipalFromExpiredToken(request.Token);
         string? userEmail = userPrincipal.GetEmail();
         var user = await _userManager.FindByEmailAsync(userEmail!);
         if (user is null)
@@ -69,14 +69,14 @@ internal class TokenService : ITokenService
             throw new UnauthorizedException("Invalid Refresh Token.");
         }
 
-        return await GenerateTokensAndUpdateUser(user, ipAddress);
+        return await _GenerateTokensAndUpdateUser(user, ipAddress);
     }
 
-    private async Task<LoginResponse> GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress)
+    private async Task<LoginResponse> _GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress)
     {
-        string token = GenerateJwt(user, ipAddress);
+        string token = _GenerateJwt(user, ipAddress);
 
-        user.RefreshToken = GenerateRefreshToken();
+        user.RefreshToken = _GenerateRefreshToken();
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
 
         await _userManager.UpdateAsync(user);
@@ -84,10 +84,10 @@ internal class TokenService : ITokenService
         return new LoginResponse(token, user.RefreshToken, user.RefreshTokenExpiryTime);
     }
 
-    private string GenerateJwt(ApplicationUser user, string ipAddress) =>
-        GenerateEncryptedToken(GetSigningCredentials(), GetClaims(user, ipAddress));
+    private string _GenerateJwt(ApplicationUser user, string ipAddress) =>
+        _GenerateEncryptedToken(_GetSigningCredentials(), _GetClaims(user, ipAddress));
 
-    private IEnumerable<Claim> GetClaims(ApplicationUser user, string ipAddress) =>
+    private IEnumerable<Claim> _GetClaims(ApplicationUser user, string ipAddress) =>
         new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -100,7 +100,7 @@ internal class TokenService : ITokenService
             new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
         };
 
-    private static string GenerateRefreshToken()
+    private static string _GenerateRefreshToken()
     {
         byte[] randomNumber = new byte[32];
         using var rng = RandomNumberGenerator.Create();
@@ -108,7 +108,7 @@ internal class TokenService : ITokenService
         return Convert.ToBase64String(randomNumber);
     }
 
-    private string GenerateEncryptedToken(SigningCredentials signingCredentials, IEnumerable<Claim> claims)
+    private string _GenerateEncryptedToken(SigningCredentials signingCredentials, IEnumerable<Claim> claims)
     {
         var token = new JwtSecurityToken(
            claims: claims,
@@ -118,7 +118,7 @@ internal class TokenService : ITokenService
         return tokenHandler.WriteToken(token);
     }
 
-    private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+    private ClaimsPrincipal _GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
         {
@@ -143,7 +143,7 @@ internal class TokenService : ITokenService
         return principal;
     }
 
-    private SigningCredentials GetSigningCredentials()
+    private SigningCredentials _GetSigningCredentials()
     {
         byte[] secret = Encoding.UTF8.GetBytes(_jwtSettings.Key);
         return new SigningCredentials(new SymmetricSecurityKey(secret), SecurityAlgorithms.HmacSha256);

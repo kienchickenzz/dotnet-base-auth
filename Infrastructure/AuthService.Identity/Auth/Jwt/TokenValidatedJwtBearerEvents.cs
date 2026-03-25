@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
 
 using AuthService.Application.Common.Exceptions;
-using AuthService.Application.Features.Identities;
+using AuthService.Application.Common.Extensions.Identity;
 
 
 internal class TokenValidatedJwtBearerEvents : JwtBearerEvents

@@ -2,7 +2,7 @@ namespace AuthService.Identity.Auth.Permissions;
 
 using Microsoft.AspNetCore.Authorization;
 
-using AuthService.Application.Features.Identities;
+using AuthService.Application.Common.Extensions.Identity;
 using AuthService.Application.Features.Identities.Users;
 
 
