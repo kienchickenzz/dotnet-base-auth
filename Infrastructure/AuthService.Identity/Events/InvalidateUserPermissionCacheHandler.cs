@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Identity;
 
 using AuthService.Application.Common.Messaging;
-using AuthService.Application.Features.Identities.Users;
+using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Identity.Entities;
 
 
@@ -11,17 +11,17 @@ internal class InvalidateUserPermissionCacheHandler :
     IDomainEventHandler<ApplicationUserUpdatedEvent>,
     IDomainEventHandler<ApplicationRoleUpdatedEvent>
 {
-    private readonly IUserService _userService;
+    private readonly IIdentityPermissionService _identityPermissionService;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public InvalidateUserPermissionCacheHandler(IUserService userService, UserManager<ApplicationUser> userManager) =>
-        (_userService, _userManager) = (userService, userManager);
+    public InvalidateUserPermissionCacheHandler(IIdentityPermissionService userService, UserManager<ApplicationUser> userManager) =>
+        (_identityPermissionService, _userManager) = (userService, userManager);
 
     public async Task Handle(ApplicationUserUpdatedEvent notification, CancellationToken cancellationToken)
     {
         if (notification.IsRolesUpdated)
         {
-            await _userService.InvalidatePermissionCacheAsync(notification.UserId, cancellationToken);
+            await _identityPermissionService.InvalidateCacheAsync(notification.UserId, cancellationToken);
         }
     }
 
@@ -31,7 +31,7 @@ internal class InvalidateUserPermissionCacheHandler :
         {
             foreach (var user in await _userManager.GetUsersInRoleAsync(notification.RoleName))
             {
-                await _userService.InvalidatePermissionCacheAsync(user.Id, cancellationToken);
+                await _identityPermissionService.InvalidateCacheAsync(user.Id, cancellationToken);
             }
         }
     }

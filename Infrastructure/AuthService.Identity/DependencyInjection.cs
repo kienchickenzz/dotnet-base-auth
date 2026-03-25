@@ -9,11 +9,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Common.ApplicationServices.Auth;
 using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Features.Identities.Authentication.Services;
-using AuthService.Application.Features.Identities.Roles;
-using AuthService.Application.Features.Identities.Users;
 using AuthService.Identity.Auth;
 using AuthService.Identity.Auth.Jwt;
 using AuthService.Identity.Auth.Permissions;
@@ -33,12 +32,16 @@ public static class DependencyInjection
 
         // Legacy services (to be deprecated)
         services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IRoleService, RoleService>();
 
-        // New CQRS services
+        // New CQRS services (Authentication layer)
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+        // New Identity abstractions (Application layer interfaces)
+        services.AddScoped<IIdentityUserService, IdentityUserService>();
+        services.AddScoped<IIdentityRoleService, IdentityRoleService>();
+        services.AddScoped<IIdentityPermissionService, IdentityPermissionService>();
+        services.AddScoped<IIdentityAuthService, IdentityAuthService>();
 
         services.Configure<AdminSetting>(configuration.GetSection("SecuritySettings:AdminSettings"));
 
