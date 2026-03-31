@@ -96,9 +96,12 @@ public class UsersController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetByIdAsync), new { id = result.Value }, result.Value)
-            : BadRequest(result.Error);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Created($"/api/users/{result.Value}", result.Value);
     }
 
     /// <summary>
@@ -111,9 +114,12 @@ public class UsersController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetByIdAsync), new { id = result.Value }, result.Value)
-            : BadRequest(result.Error);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Created($"/api/users/{result.Value}", result.Value);
     }
 
     /// <summary>

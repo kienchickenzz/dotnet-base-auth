@@ -29,8 +29,10 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse>
 
         var context = new ValidationContext<TRequest>(request);
 
-        var validationErrors = _validators
-            .Select(validator => validator.Validate(context))
+        var validationResults = await Task.WhenAll(
+            _validators.Select(validator => validator.ValidateAsync(context, cancellationToken)));
+
+        var validationErrors = validationResults
             .Where(validationResult => validationResult.Errors.Any())
             .SelectMany(validationResult => validationResult.Errors)
             .Select(validationFailure => new ValidationError(

@@ -1,6 +1,6 @@
 <Solution>
-    <Folder Name="/Api/">
-        <Project Path="Api/AuthService.Api/AuthService.Api.csproj" />
+    <Folder Name="/Presentation/">
+        <Project Path="Presentation/AuthService.Api/AuthService.Api.csproj" />
     </Folder>
     <Folder Name="/Core/">
         <Project Path="Core/AuthService.Application/AuthService.Application.csproj" />
@@ -9,6 +9,5 @@
     <Folder Name="/Infrastructure/">
         <Project Path="Infrastructure/AuthService.Identity/AuthService.Identity.csproj" />
         <Project Path="Infrastructure/AuthService.Infrastructure/AuthService.Infrastructure.csproj" />
-        <Project Path="Infrastructure/AuthService.Persistence/AuthService.Persistence.csproj" />
     </Folder>
 </Solution>

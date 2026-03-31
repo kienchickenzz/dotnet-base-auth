@@ -80,9 +80,12 @@ public class RolesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetByIdAsync), new { id = result.Value }, result.Value)
-            : BadRequest(result.Error);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Created($"/api/roles/{result.Value}", result.Value);
     }
 
     /// <summary>
