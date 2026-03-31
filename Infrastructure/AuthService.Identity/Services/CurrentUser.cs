@@ -1,6 +1,5 @@
 ﻿namespace AuthService.Identity.Services;
 
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 using AuthService.Application.Common.ApplicationServices.Auth;
@@ -38,7 +37,7 @@ public class CurrentUser : ICurrentUser, ICurrentUserInitializer
 
     public void SetCurrentUser(ClaimsPrincipal user)
     {
-        if (_user != null)
+        if (_user != null) // Chỉ set một lần
         {
             throw new Exception("Method reserved for in-scope initialization");
         }
@@ -48,7 +47,7 @@ public class CurrentUser : ICurrentUser, ICurrentUserInitializer
 
     public void SetCurrentUserId(string userId)
     {
-        if (_userId != Guid.Empty)
+        if (_userId != Guid.Empty) // Chỉ set một lần
         {
             throw new Exception("Method reserved for in-scope initialization");
         }

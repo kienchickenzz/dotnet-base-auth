@@ -4,6 +4,8 @@ using AuthService.Api.Configurations;
 using AuthService.Api.Extensions;
 using AuthService.Api.OpenApi;
 using AuthService.Identity;
+using AuthService.Persistence;
+using AuthService.Persistence.Initialization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,12 +23,14 @@ builder.Services.AddApiServices();
 builder.Services.AddApplication();
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructurePersistence(builder.Configuration);
 builder.Services.AddInfrastureIdentity(builder.Configuration);
 
 var app = builder.Build();
 
 // Initialize database (migrate + seed)
-await app.Services.InitializeDatabaseAsync();
+await app.Services.InitializeApplicationIdentityDatabaseAsync();
+await app.Services.InitializeApplicationDatabaseAsync();
 
 app.UseSwaggerExtension();
 
@@ -40,6 +44,8 @@ app.UseInfrastructure();
 app.UseInfrastructureIdentity();
 
 app.UseCustomExceptionHandler();
+
+app.Services.AddOutBoxJob(builder.Configuration);
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {

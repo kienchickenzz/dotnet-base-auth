@@ -59,7 +59,7 @@ public static class DependencyInjection
             ._UseCurrentUser();
 
     // TODO: hàm không thật sự đăng ký DI mà seed dữ liệu, nên đặt chỗ khác??
-    public static async Task InitializeDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    public static async Task InitializeApplicationIdentityDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
     {
         // Create a new scope to retrieve scoped services
         using var scope = services.CreateScope();
@@ -68,6 +68,7 @@ public static class DependencyInjection
             .InitializeAsync(cancellationToken);
     }
 
+    // TODO: Đổi tên hàm này để phản ánh đúng hơn chức năng của nó
     private static IApplicationBuilder _UseCurrentUser(this IApplicationBuilder app) =>
         app.UseMiddleware<CurrentUserMiddleware>();
 
@@ -80,11 +81,13 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationIdentityDbContext>(options =>
                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+        // Dòng này thừa??
         services.AddHttpContextAccessor();
 
         return services;
     }
         
+    // TODO: Ý nghĩa hàm này là gì?
     private static IServiceCollection _AddCurrentUser(this IServiceCollection services) =>
         services
             .AddScoped<CurrentUserMiddleware>()
@@ -98,6 +101,7 @@ public static class DependencyInjection
 
     private static IServiceCollection _AddJwtAuth(this IServiceCollection services, IConfiguration configuration)
     {
+        // TODO: Dùng cách khác để load JwtSettings 
         services.AddOptions<JwtSettings>()
             .BindConfiguration($"SecuritySettings:{nameof(JwtSettings)}")
             .ValidateDataAnnotations()
