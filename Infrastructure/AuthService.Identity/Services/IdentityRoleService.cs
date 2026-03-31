@@ -248,7 +248,8 @@ internal sealed class IdentityRoleService : IIdentityRoleService
                     RoleId = role.Id,
                     ClaimType = Claims.Permission,
                     ClaimValue = permission,
-                    CreatedBy = _currentUser.GetUserId().ToString()
+                    CreatedBy = _currentUser.GetUserId(),
+                    CreatedOn = DateTime.UtcNow
                 });
                 await _db.SaveChangesAsync(cancellationToken);
             }

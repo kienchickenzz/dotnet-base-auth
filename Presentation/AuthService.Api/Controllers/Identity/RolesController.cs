@@ -7,6 +7,11 @@ namespace AuthService.Api.Controllers.Identity;
 
 using MediatR;
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
 using Microsoft.AspNetCore.Mvc;
 
 using AuthService.Application.Common.Abstractions.Identity.Models;
@@ -39,7 +44,7 @@ public class RolesController : ControllerBase
     /// Gets all roles.
     /// </summary>
     [HttpGet]
-    [MustHavePermission(Action.View, Resource.Roles)]
+    [MustHavePermission(Actions.View, Resource.Roles)]
     public async Task<ActionResult<List<RoleDto>>> GetListAsync(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetRolesQuery(), cancellationToken);
@@ -50,7 +55,7 @@ public class RolesController : ControllerBase
     /// Gets role by Id.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [MustHavePermission(Action.View, Resource.Roles)]
+    [MustHavePermission(Actions.View, Resource.Roles)]
     public async Task<ActionResult<RoleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetRoleByIdQuery(id), cancellationToken);
@@ -61,7 +66,7 @@ public class RolesController : ControllerBase
     /// Gets role by Id with permissions.
     /// </summary>
     [HttpGet("{id:guid}/permissions")]
-    [MustHavePermission(Action.View, Resource.RoleClaims)]
+    [MustHavePermission(Actions.View, Resource.RoleClaims)]
     public async Task<ActionResult<RoleDto>> GetByIdWithPermissionsAsync(
         Guid id,
         CancellationToken cancellationToken)
@@ -74,7 +79,7 @@ public class RolesController : ControllerBase
     /// Creates a new role.
     /// </summary>
     [HttpPost]
-    [MustHavePermission(Action.Create, Resource.Roles)]
+    [MustHavePermission(Actions.Create, Resource.Roles)]
     public async Task<ActionResult<Guid>> CreateAsync(
         CreateRoleCommand command,
         CancellationToken cancellationToken)
@@ -92,7 +97,7 @@ public class RolesController : ControllerBase
     /// Updates an existing role.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [MustHavePermission(Action.Update, Resource.Roles)]
+    [MustHavePermission(Actions.Update, Resource.Roles)]
     public async Task<ActionResult<Guid>> UpdateAsync(
         Guid id,
         UpdateRoleCommand command,
@@ -111,7 +116,7 @@ public class RolesController : ControllerBase
     /// Updates role permissions.
     /// </summary>
     [HttpPut("{id:guid}/permissions")]
-    [MustHavePermission(Action.Update, Resource.RoleClaims)]
+    [MustHavePermission(Actions.Update, Resource.RoleClaims)]
     public async Task<ActionResult> UpdatePermissionsAsync(
         Guid id,
         List<string> permissions,
@@ -126,7 +131,7 @@ public class RolesController : ControllerBase
     /// Deletes a role.
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [MustHavePermission(Action.Delete, Resource.Roles)]
+    [MustHavePermission(Actions.Delete, Resource.Roles)]
     public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteRoleCommand(id);

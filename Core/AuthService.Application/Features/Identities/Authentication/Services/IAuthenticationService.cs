@@ -59,6 +59,15 @@ public interface IAuthenticationService
         string refreshToken,
         DateTime expiryTime,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes user's refresh token (logout).
+    /// </summary>
+    /// <param name="userId">User's ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task RevokeRefreshTokenAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }
 
 

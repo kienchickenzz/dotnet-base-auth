@@ -56,7 +56,7 @@ internal sealed class AuthenticationService : IAuthenticationService
             return Result.Failure<AuthenticatedUserInfo>(AuthenticationErrors.EmailNotConfirmed);
         }
 
-        return MapToUserInfo(user);
+        return _MapToUserInfo(user);
     }
 
     /// <inheritdoc />
@@ -70,7 +70,7 @@ internal sealed class AuthenticationService : IAuthenticationService
             return Result.Failure<AuthenticatedUserInfo>(AuthenticationErrors.InvalidCredentials);
         }
 
-        return MapToUserInfo(user);
+        return _MapToUserInfo(user);
     }
 
     /// <inheritdoc />
@@ -114,10 +114,24 @@ internal sealed class AuthenticationService : IAuthenticationService
         }
     }
 
+    /// <inheritdoc />
+    public async Task RevokeRefreshTokenAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is not null)
+        {
+            user.RefreshToken = string.Empty;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1);
+            await _userManager.UpdateAsync(user);
+        }
+    }
+
     /// <summary>
     /// Maps ApplicationUser to AuthenticatedUserInfo.
     /// </summary>
-    private static AuthenticatedUserInfo MapToUserInfo(ApplicationUser user)
+    private static AuthenticatedUserInfo _MapToUserInfo(ApplicationUser user)
     {
         return new AuthenticatedUserInfo(
             user.Id,

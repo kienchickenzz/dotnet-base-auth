@@ -3,7 +3,7 @@
 using System.Collections.ObjectModel;
 
 
-public static class Action
+public static class Actions
 {
     public const string View = nameof(View);
     public const string Create = nameof(Create);
@@ -26,29 +26,29 @@ public static class Permissions
 {
     private static readonly Permission[] _all = new Permission[]
     {
-        new("View Users", Action.View, Resource.Users),
-        new("Create Users", Action.Create, Resource.Users),
-        new("Update Users", Action.Update, Resource.Users),
-        new("Delete Users", Action.Delete, Resource.Users),
-        new("Export Users", Action.Export, Resource.Users),
-        new("View UserRoles", Action.View, Resource.UserRoles),
-        new("Update UserRoles", Action.Update, Resource.UserRoles),
-        new("View Roles", Action.View, Resource.Roles),
-        new("Create Roles", Action.Create, Resource.Roles),
-        new("Update Roles", Action.Update, Resource.Roles),
-        new("Delete Roles", Action.Delete, Resource.Roles),
-        new("View RoleClaims", Action.View, Resource.RoleClaims),
-        new("Update RoleClaims", Action.Update, Resource.RoleClaims),
-        new("View Products", Action.View, Resource.Products, IsCustomer: true),
-        new("Create Products", Action.Create, Resource.Products),
-        new("Update Products", Action.Update, Resource.Products),
-        new("Delete Products", Action.Delete, Resource.Products),
-        new("Export Products", Action.Export, Resource.Products),
-        new("View Categories", Action.View, Resource.Categories, IsCustomer: true),
-        new("Create Categories", Action.Create, Resource.Categories),
-        new("Update Categories", Action.Update, Resource.Categories),
-        new("Delete Categories", Action.Delete, Resource.Categories),
-        new("Export Categories", Action.Export, Resource.Categories),
+        new("View Users", Actions.View, Resource.Users),
+        new("Create Users", Actions.Create, Resource.Users),
+        new("Update Users", Actions.Update, Resource.Users),
+        new("Delete Users", Actions.Delete, Resource.Users),
+        new("Export Users", Actions.Export, Resource.Users),
+        new("View UserRoles", Actions.View, Resource.UserRoles),
+        new("Update UserRoles", Actions.Update, Resource.UserRoles),
+        new("View Roles", Actions.View, Resource.Roles),
+        new("Create Roles", Actions.Create, Resource.Roles),
+        new("Update Roles", Actions.Update, Resource.Roles),
+        new("Delete Roles", Actions.Delete, Resource.Roles),
+        new("View RoleClaims", Actions.View, Resource.RoleClaims),
+        new("Update RoleClaims", Actions.Update, Resource.RoleClaims),
+        new("View Products", Actions.View, Resource.Products, IsCustomer: true),
+        new("Create Products", Actions.Create, Resource.Products),
+        new("Update Products", Actions.Update, Resource.Products),
+        new("Delete Products", Actions.Delete, Resource.Products),
+        new("Export Products", Actions.Export, Resource.Products),
+        new("View Categories", Actions.View, Resource.Categories, IsCustomer: true),
+        new("Create Categories", Actions.Create, Resource.Categories),
+        new("Update Categories", Actions.Update, Resource.Categories),
+        new("Delete Categories", Actions.Delete, Resource.Categories),
+        new("Export Categories", Actions.Export, Resource.Categories),
     };
 
     public static IReadOnlyList<Permission> Admin { get; } = new ReadOnlyCollection<Permission>(_all);

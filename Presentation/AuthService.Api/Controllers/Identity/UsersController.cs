@@ -7,6 +7,11 @@ namespace AuthService.Api.Controllers.Identity;
 
 using MediatR;
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +20,7 @@ using AuthService.Application.Features.Identities.Users.Commands.AssignRoles;
 using AuthService.Application.Features.Identities.Users.Commands.Confirm;
 using AuthService.Application.Features.Identities.Users.Commands.CreateUser;
 using AuthService.Application.Features.Identities.Users.Commands.Password;
+using AuthService.Application.Features.Identities.Users.Commands.DeleteUser;
 using AuthService.Application.Features.Identities.Users.Commands.ToggleUserStatus;
 using AuthService.Application.Features.Identities.Users.Commands.UpdateUser;
 using AuthService.Application.Features.Identities.Users.Queries.GetUserById;
@@ -42,7 +48,7 @@ public class UsersController : ControllerBase
     /// Gets all users.
     /// </summary>
     [HttpGet]
-    [MustHavePermission(Action.View, Resource.Users)]
+    [MustHavePermission(Actions.View, Resource.Users)]
     public async Task<ActionResult<List<UserDto>>> GetListAsync(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUsersQuery(), cancellationToken);
@@ -53,7 +59,7 @@ public class UsersController : ControllerBase
     /// Gets user by Id.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [MustHavePermission(Action.View, Resource.Users)]
+    [MustHavePermission(Actions.View, Resource.Users)]
     public async Task<ActionResult<UserDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUserByIdQuery(id), cancellationToken);
@@ -64,7 +70,7 @@ public class UsersController : ControllerBase
     /// Gets roles for a user.
     /// </summary>
     [HttpGet("{id:guid}/roles")]
-    [MustHavePermission(Action.View, Resource.UserRoles)]
+    [MustHavePermission(Actions.View, Resource.UserRoles)]
     public async Task<ActionResult<List<UserRoleDto>>> GetRolesAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUserRolesQuery(id), cancellationToken);
@@ -75,7 +81,7 @@ public class UsersController : ControllerBase
     /// Assigns roles to a user.
     /// </summary>
     [HttpPost("{id:guid}/roles")]
-    [MustHavePermission(Action.Update, Resource.UserRoles)]
+    [MustHavePermission(Actions.Update, Resource.UserRoles)]
     public async Task<ActionResult> AssignRolesAsync(
         Guid id,
         List<UserRoleDto> roles,
@@ -90,7 +96,7 @@ public class UsersController : ControllerBase
     /// Creates a new user.
     /// </summary>
     [HttpPost]
-    [MustHavePermission(Action.Create, Resource.Users)]
+    [MustHavePermission(Actions.Create, Resource.Users)]
     public async Task<ActionResult<Guid>> CreateAsync(
         CreateUserCommand command,
         CancellationToken cancellationToken)
@@ -126,7 +132,7 @@ public class UsersController : ControllerBase
     /// Updates user profile.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [MustHavePermission(Action.Update, Resource.Users)]
+    [MustHavePermission(Actions.Update, Resource.Users)]
     public async Task<ActionResult> UpdateAsync(
         Guid id,
         UpdateUserCommand command,
@@ -145,7 +151,7 @@ public class UsersController : ControllerBase
     /// Toggles user active status.
     /// </summary>
     [HttpPost("{id:guid}/toggle-status")]
-    [MustHavePermission(Action.Update, Resource.Users)]
+    [MustHavePermission(Actions.Update, Resource.Users)]
     public async Task<ActionResult> ToggleStatusAsync(
         Guid id,
         [FromBody] bool activate,
@@ -154,6 +160,17 @@ public class UsersController : ControllerBase
         var command = new ToggleUserStatusCommand(id, activate);
         var result = await _sender.Send(command, cancellationToken);
         return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+    }
+
+    /// <summary>
+    /// Soft-deletes a user.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [MustHavePermission(Actions.Delete, Resource.Users)]
+    public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new DeleteUserCommand(id), cancellationToken);
+        return result.IsSuccess ? NoContent() : NotFound(result.Error);
     }
 
     /// <summary>

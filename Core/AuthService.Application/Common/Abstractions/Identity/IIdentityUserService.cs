@@ -71,6 +71,11 @@ public interface IIdentityUserService
     /// </summary>
     Task<Result> ToggleStatusAsync(Guid userId, bool activate, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Soft-deletes a user account.
+    /// </summary>
+    Task<Result> DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
+
     // ============ Password ============
 
     /// <summary>

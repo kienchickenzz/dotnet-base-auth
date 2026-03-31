@@ -4,20 +4,25 @@
         <name>AuthService.Api</name>
     </assembly>
     <members>
+        <member name="T:AuthService.Api.Controllers.Identity.AuthController">
+            <summary>
+            Authentication endpoints.
+            </summary>
+        </member>
         <member name="M:AuthService.Api.Controllers.Identity.AuthController.Login(AuthService.Application.Features.Identities.Authentication.LoginRequest,System.Threading.CancellationToken)">
             <summary>
-            Login
+            Login.
             </summary>
-            <param name="request"></param>
-            <param name="cancellationToken"></param>
-            <returns></returns>
         </member>
         <member name="M:AuthService.Api.Controllers.Identity.AuthController.RefreshAsync(AuthService.Application.Features.Identities.Authentication.RefreshTokenRequest)">
             <summary>
-            Refresh token
+            Refresh token.
             </summary>
-            <param name="request"></param>
-            <returns></returns>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AuthController.LogoutAsync(System.Threading.CancellationToken)">
+            <summary>
+            Logout current user and revoke refresh token.
+            </summary>
         </member>
         <member name="T:AuthService.Api.Controllers.Identity.RolesController">
             <summary>
@@ -102,6 +107,11 @@
         <member name="M:AuthService.Api.Controllers.Identity.UsersController.ToggleStatusAsync(System.Guid,System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Toggles user active status.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.UsersController.DeleteAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Soft-deletes a user.
             </summary>
         </member>
         <member name="M:AuthService.Api.Controllers.Identity.UsersController.ConfirmEmailAsync(System.Guid,System.String,System.Threading.CancellationToken)">

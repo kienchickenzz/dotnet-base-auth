@@ -223,6 +223,36 @@ internal sealed class IdentityUserService : IIdentityUserService
         return Result.Success();
     }
 
+    /// <inheritdoc />
+    public async Task<Result> DeleteAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.Users
+            .Where(u => u.Id == userId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (user is null)
+        {
+            return Result.Failure(UserErrors.NotFound);
+        }
+
+        // Prevent deleting admin
+        if (await _userManager.IsInRoleAsync(user, Roles.Admin))
+        {
+            return Result.Failure(UserErrors.AdminCannotBeDeleted);
+        }
+
+        // Soft delete: deactivate + clear tokens + set deleted fields
+        user.IsActive = false;
+        user.DeletedOn = DateTime.UtcNow;
+        user.DeletedBy = userId;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow;
+
+        await _userManager.UpdateAsync(user);
+
+        return Result.Success();
+    }
+
     // ============ Password ============
 
     /// <inheritdoc />
@@ -468,7 +498,8 @@ internal sealed class IdentityUserService : IIdentityUserService
 internal static class UserErrors
 {
     public static readonly Error NotFound = new("User.NotFound", "User Not Found.");
-    public static readonly Error AdminStatusCannotBeToggled = new("User.AdminStatusCannotBeToggled", "Administrators Profile's Status cannot be toggled");
+    public static readonly Error AdminStatusCannotBeToggled = new("User.AdminStatusCannotBeToggled", "Administrators Profile's Status cannot be toggled.");
+    public static readonly Error AdminCannotBeDeleted = new("User.AdminCannotBeDeleted", "Administrator account cannot be deleted.");
     public static readonly Error ResetPasswordFailed = new("User.ResetPasswordFailed", "An Error has occurred!");
     public static readonly Error ConfirmEmailFailed = new("User.ConfirmEmailFailed", "An error occurred while confirming E-Mail.");
     public static readonly Error ConfirmPhoneFailed = new("User.ConfirmPhoneFailed", "An error occurred while confirming Mobile Phone.");
