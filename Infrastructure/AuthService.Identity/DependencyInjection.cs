@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddTransient<ApplicationDbSeeder>();
 
         // Legacy services (to be deprecated)
+        // TODO: Thay ITokenService bằng IJwtTokenGenerator và IAuthenticationService, sau đó xóa ITokenService
         services.AddScoped<ITokenService, TokenService>();
 
         // New CQRS services (Authentication layer)
