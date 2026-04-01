@@ -32,6 +32,8 @@ var app = builder.Build();
 await app.Services.InitializeApplicationIdentityDatabaseAsync();
 await app.Services.InitializeApplicationDatabaseAsync();
 
+app.UseCustomExceptionHandler();
+
 app.UseSwaggerExtension();
 
 app.UseRouting();
@@ -42,8 +44,6 @@ app.MapControllers();
 
 app.UseInfrastructure();
 app.UseInfrastructureIdentity();
-
-app.UseCustomExceptionHandler();
 
 app.Services.AddOutBoxJob(builder.Configuration);
 

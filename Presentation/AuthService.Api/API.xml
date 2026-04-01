@@ -4,24 +4,64 @@
         <name>AuthService.Api</name>
     </assembly>
     <members>
-        <member name="T:AuthService.Api.Controllers.Identity.AuthController">
+        <member name="T:AuthService.Api.Controllers.Identity.AccountController">
             <summary>
-            Authentication endpoints.
+            Public account endpoints for registration, authentication and password recovery.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.AuthController.Login(AuthService.Application.Features.Identities.Authentication.LoginRequest,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.LoginAsync(AuthService.Application.Features.Identities.Authentication.LoginRequest,System.Threading.CancellationToken)">
             <summary>
-            Login.
+            Login with email and password.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.AuthController.RefreshAsync(AuthService.Application.Features.Identities.Authentication.RefreshTokenRequest)">
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.RefreshAsync(AuthService.Application.Features.Identities.Authentication.RefreshTokenRequest,System.Threading.CancellationToken)">
             <summary>
-            Refresh token.
+            Refresh access token using refresh token.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.AuthController.LogoutAsync(System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.LogoutAsync(System.Threading.CancellationToken)">
             <summary>
             Logout current user and revoke refresh token.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.RegisterAsync(AuthService.Application.Features.Identities.Users.Commands.CreateUser.CreateUserCommand,System.Threading.CancellationToken)">
+            <summary>
+            Register a new user account.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.ConfirmEmailAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Confirms user email.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.ConfirmPhoneNumberAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Confirms user phone number.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.ForgotPasswordAsync(AuthService.Application.Features.Identities.Users.Commands.Password.ForgotPasswordCommand,System.Threading.CancellationToken)">
+            <summary>
+            Initiates forgot password flow.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.ResetPasswordAsync(AuthService.Application.Features.Identities.Users.Commands.Password.ResetPasswordCommand,System.Threading.CancellationToken)">
+            <summary>
+            Resets user password with token.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController._GetIpAddress">
+            <summary>
+            Gets client IP address from request headers.
+            </summary>
+        </member>
+        <member name="T:AuthService.Api.Controllers.Identity.ProfileController">
+            <summary>
+            Self-service profile endpoints for authenticated users.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Controllers.Identity.ProfileController.ChangePasswordAsync(AuthService.Application.Features.Identities.Users.Commands.Password.ChangePasswordCommand,System.Threading.CancellationToken)">
+            <summary>
+            Changes current user's password.
             </summary>
         </member>
         <member name="T:AuthService.Api.Controllers.Identity.RolesController">
@@ -66,7 +106,7 @@
         </member>
         <member name="T:AuthService.Api.Controllers.Identity.UsersController">
             <summary>
-            User management endpoints.
+            Admin user management endpoints.
             </summary>
         </member>
         <member name="M:AuthService.Api.Controllers.Identity.UsersController.GetListAsync(System.Threading.CancellationToken)">
@@ -91,12 +131,7 @@
         </member>
         <member name="M:AuthService.Api.Controllers.Identity.UsersController.CreateAsync(AuthService.Application.Features.Identities.Users.Commands.CreateUser.CreateUserCommand,System.Threading.CancellationToken)">
             <summary>
-            Creates a new user.
-            </summary>
-        </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.SelfRegisterAsync(AuthService.Application.Features.Identities.Users.Commands.CreateUser.CreateUserCommand,System.Threading.CancellationToken)">
-            <summary>
-            Self-register a new user.
+            Creates a new user (admin).
             </summary>
         </member>
         <member name="M:AuthService.Api.Controllers.Identity.UsersController.UpdateAsync(System.Guid,AuthService.Application.Features.Identities.Users.Commands.UpdateUser.UpdateUserCommand,System.Threading.CancellationToken)">
@@ -114,29 +149,39 @@
             Soft-deletes a user.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.ConfirmEmailAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="T:AuthService.Api.Extensions.ResultExtensions">
             <summary>
-            Confirms user email.
+            Extension methods for converting Result/Error to ActionResult responses.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.ConfirmPhoneNumberAsync(System.Guid,System.String,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToProblemResult(AuthService.Domain.Common.Error,System.Int32)">
             <summary>
-            Confirms user phone number.
+            Converts an Error to a ProblemDetails ActionResult with specified status code.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.ChangePasswordAsync(System.Guid,AuthService.Application.Features.Identities.Users.Commands.Password.ChangePasswordCommand,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToBadRequest(AuthService.Domain.Common.Error)">
             <summary>
-            Changes user password.
+            Converts an Error to a 400 Bad Request ProblemDetails response.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.ForgotPasswordAsync(AuthService.Application.Features.Identities.Users.Commands.Password.ForgotPasswordCommand,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToUnauthorized(AuthService.Domain.Common.Error)">
             <summary>
-            Initiates forgot password flow.
+            Converts an Error to a 401 Unauthorized ProblemDetails response.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.ResetPasswordAsync(AuthService.Application.Features.Identities.Users.Commands.Password.ResetPasswordCommand,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToForbidden(AuthService.Domain.Common.Error)">
             <summary>
-            Resets user password with token.
+            Converts an Error to a 403 Forbidden ProblemDetails response.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToNotFound(AuthService.Domain.Common.Error)">
+            <summary>
+            Converts an Error to a 404 Not Found ProblemDetails response.
+            </summary>
+        </member>
+        <member name="M:AuthService.Api.Extensions.ResultExtensions.ToProblemResult(System.Collections.Generic.IEnumerable{AuthService.Domain.Common.Error},System.Int32,System.String)">
+            <summary>
+            Converts multiple Errors to a ProblemDetails ActionResult.
             </summary>
         </member>
         <member name="T:AuthService.Api.Extensions.SerilogExtensions">

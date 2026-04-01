@@ -15,12 +15,18 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Options;
 
 using AuthService.Application.Common.ApplicationServices.BackgroundJob;
+using AuthService.Application.Common.ApplicationServices.Email;
 using AuthService.Application.Common.ApplicationServices.Caching;
 using AuthService.Application.Common.ApplicationServices.Serializer;
 using AuthService.Infrastructure.Caching;
 using AuthService.Infrastructure.Serializer;
 using AuthService.Infrastructure.Settings;
 using AuthService.Infrastructure.BackgroundJobs;
+
+using AuthService.Infrastructure.Email;
+using AuthService.Infrastructure.Email.Fake;
+using AuthService.Infrastructure.Email.Mailkit;
+using AuthService.Infrastructure.Email.Template;
 
 
 /// <summary>
@@ -38,7 +44,8 @@ public static class DependencyInjection
             ._AddCaching(config)
             ._AddServices()
             ._AddBackgroundJobs(config)
-            ._AddSerializer();
+            ._AddSerializer()
+            ._AddMail(config);
 
         return services;
     }
@@ -47,6 +54,7 @@ public static class DependencyInjection
     {
         services.Configure<CacheSettings>(config.GetSection(CacheSettings.SectionName));
         services.Configure<HangfireSettings>(config.GetSection(HangfireSettings.SectionName));
+        services.Configure<MailSettings>(config.GetSection(MailSettings.SectionName));
 
         return services;
     }
@@ -54,6 +62,7 @@ public static class DependencyInjection
     private static IServiceCollection _AddServices(this IServiceCollection services)
     {
         services.AddScoped<IJobService, HangfireService>();
+        
 
         return services;
     }
@@ -165,5 +174,29 @@ public static class DependencyInjection
         };
 
         return app.UseHangfireDashboard(settings.Route, dashboardOptions);
+    }
+
+    private static IServiceCollection _AddMail(this IServiceCollection services, IConfiguration config)
+    {
+        var settings = config
+            .GetSection(MailSettings.SectionName)
+            .Get<MailSettings>();
+
+        services.AddSingleton<IMailRequestFactory, MailRequestFactory>();
+        services.AddScoped<IEmailTemplateFactory, RazorEmailTemplateFactory>();
+
+        // Register only the configured provider
+        switch (settings?.Provider)
+        {
+            case EmailProviderEnum.Fake:
+                services.AddScoped<IMailService, FakeMailService>();
+                break;
+            case EmailProviderEnum.MailKit:
+            default:
+                services.AddScoped<IMailService, SmtpMailService>();
+                break;
+        }
+
+        return services;
     }
 }

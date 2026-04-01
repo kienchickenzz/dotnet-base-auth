@@ -16,7 +16,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Core\AuthService.Application\AuthService.Application.csproj" />
-        <!-- TODO: Tổ chức lại code để infra không phụ thuộc vào Domain nữa?! -->
         <ProjectReference Include="..\..\Core\AuthService.Domain\AuthService.Domain.csproj" />
     </ItemGroup>
 

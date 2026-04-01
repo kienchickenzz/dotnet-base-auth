@@ -1,7 +1,7 @@
 /**
- * UsersController handles user management API endpoints.
+ * UsersController handles admin user management API endpoints.
  *
- * <p>Uses MediatR to dispatch commands and queries.</p>
+ * <p>Uses MediatR to dispatch commands and queries. Requires admin permissions.</p>
  */
 namespace AuthService.Api.Controllers.Identity;
 
@@ -12,14 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using AuthService.Api.Extensions;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Application.Features.Identities.Users.Commands.AssignRoles;
-using AuthService.Application.Features.Identities.Users.Commands.Confirm;
 using AuthService.Application.Features.Identities.Users.Commands.CreateUser;
-using AuthService.Application.Features.Identities.Users.Commands.Password;
 using AuthService.Application.Features.Identities.Users.Commands.DeleteUser;
 using AuthService.Application.Features.Identities.Users.Commands.ToggleUserStatus;
 using AuthService.Application.Features.Identities.Users.Commands.UpdateUser;
@@ -31,7 +29,7 @@ using AuthService.Identity.Auth.Permissions;
 
 
 /// <summary>
-/// User management endpoints.
+/// Admin user management endpoints.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -52,7 +50,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<List<UserDto>>> GetListAsync(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUsersQuery(), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -63,7 +61,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUserByIdQuery(id), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToNotFound();
     }
 
     /// <summary>
@@ -74,7 +72,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<List<UserRoleDto>>> GetRolesAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetUserRolesQuery(id), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToNotFound();
     }
 
     /// <summary>
@@ -89,11 +87,11 @@ public class UsersController : ControllerBase
     {
         var command = new AssignUserRolesCommand(id, roles);
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToBadRequest();
     }
 
     /// <summary>
-    /// Creates a new user.
+    /// Creates a new user (admin).
     /// </summary>
     [HttpPost]
     [MustHavePermission(Actions.Create, Resource.Users)]
@@ -104,25 +102,7 @@ public class UsersController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            return BadRequest(result.Error);
-        }
-
-        return Created($"/api/users/{result.Value}", result.Value);
-    }
-
-    /// <summary>
-    /// Self-register a new user.
-    /// </summary>
-    [HttpPost("self-register")]
-    [AllowAnonymous]
-    public async Task<ActionResult<Guid>> SelfRegisterAsync(
-        CreateUserCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return BadRequest(result.Error);
+            return result.Error.ToBadRequest();
         }
 
         return Created($"/api/users/{result.Value}", result.Value);
@@ -144,7 +124,7 @@ public class UsersController : ControllerBase
         }
 
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -159,7 +139,7 @@ public class UsersController : ControllerBase
     {
         var command = new ToggleUserStatusCommand(id, activate);
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -170,79 +150,6 @@ public class UsersController : ControllerBase
     public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new DeleteUserCommand(id), cancellationToken);
-        return result.IsSuccess ? NoContent() : NotFound(result.Error);
-    }
-
-    /// <summary>
-    /// Confirms user email.
-    /// </summary>
-    [HttpGet("confirm-email")]
-    [AllowAnonymous]
-    public async Task<ActionResult<string>> ConfirmEmailAsync(
-        [FromQuery] Guid userId,
-        [FromQuery] string code,
-        CancellationToken cancellationToken)
-    {
-        var command = new ConfirmEmailCommand(userId, code);
-        var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-    }
-
-    /// <summary>
-    /// Confirms user phone number.
-    /// </summary>
-    [HttpGet("confirm-phone")]
-    public async Task<ActionResult<string>> ConfirmPhoneNumberAsync(
-        [FromQuery] Guid userId,
-        [FromQuery] string code,
-        CancellationToken cancellationToken)
-    {
-        var command = new ConfirmPhoneNumberCommand(userId, code);
-        var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-    }
-
-    /// <summary>
-    /// Changes user password.
-    /// </summary>
-    [HttpPost("{id:guid}/change-password")]
-    public async Task<ActionResult> ChangePasswordAsync(
-        Guid id,
-        ChangePasswordCommand command,
-        CancellationToken cancellationToken)
-    {
-        if (id != command.UserId)
-        {
-            return BadRequest("Id mismatch.");
-        }
-
-        var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
-    }
-
-    /// <summary>
-    /// Initiates forgot password flow.
-    /// </summary>
-    [HttpPost("forgot-password")]
-    [AllowAnonymous]
-    public async Task<ActionResult<string>> ForgotPasswordAsync(
-        ForgotPasswordCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-    }
-
-    /// <summary>
-    /// Resets user password with token.
-    /// </summary>
-    [HttpPost("reset-password")]
-    [AllowAnonymous]
-    public async Task<ActionResult> ResetPasswordAsync(
-        ResetPasswordCommand command,
-        CancellationToken cancellationToken)
-    {
-        var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToNotFound();
     }
 }

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 
 using Microsoft.AspNetCore.Mvc;
 
+using AuthService.Api.Extensions;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Application.Features.Identities.Roles.Commands.CreateRole;
 using AuthService.Application.Features.Identities.Roles.Commands.DeleteRole;
@@ -48,7 +49,7 @@ public class RolesController : ControllerBase
     public async Task<ActionResult<List<RoleDto>>> GetListAsync(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetRolesQuery(), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -59,7 +60,7 @@ public class RolesController : ControllerBase
     public async Task<ActionResult<RoleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetRoleByIdQuery(id), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToNotFound();
     }
 
     /// <summary>
@@ -72,7 +73,7 @@ public class RolesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetRoleWithPermissionsQuery(id), cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToNotFound();
     }
 
     /// <summary>
@@ -87,7 +88,7 @@ public class RolesController : ControllerBase
         var result = await _sender.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            return BadRequest(result.Error);
+            return result.Error.ToBadRequest();
         }
 
         return Created($"/api/roles/{result.Value}", result.Value);
@@ -109,7 +110,7 @@ public class RolesController : ControllerBase
         }
 
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -124,7 +125,7 @@ public class RolesController : ControllerBase
     {
         var command = new UpdateRolePermissionsCommand(id, permissions);
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToBadRequest();
     }
 
     /// <summary>
@@ -136,6 +137,6 @@ public class RolesController : ControllerBase
     {
         var command = new DeleteRoleCommand(id);
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? NoContent() : result.Error.ToBadRequest();
     }
 }
