@@ -1,15 +1,13 @@
 /**
- * CreateUserCommand creates a new user.
+ * CreateUserRequest is the API request for creating a new user.
  *
- * <p>Processed by CreateUserCommandHandler.</p>
+ * <p>Used by UsersController.CreateAsync endpoint.</p>
  */
-namespace AuthService.Application.Features.Identities.Users.Commands.CreateUser;
-
-using AuthService.Application.Common.Messaging;
+namespace AuthService.Api.Contracts.Identity;
 
 
 /// <summary>
-/// Command to create a new user.
+/// Request to create a new user.
 /// </summary>
 /// <param name="FirstName">User's first name.</param>
 /// <param name="LastName">User's last name.</param>
@@ -18,13 +16,11 @@ using AuthService.Application.Common.Messaging;
 /// <param name="Password">User's password.</param>
 /// <param name="ConfirmPassword">Password confirmation.</param>
 /// <param name="PhoneNumber">User's phone number (optional).</param>
-/// <param name="Origin">Origin URL for building confirmation link.</param>
-public sealed record CreateUserCommand(
+public sealed record CreateUserRequest(
     string FirstName,
     string LastName,
     string Email,
     string UserName,
     string Password,
     string ConfirmPassword,
-    string? PhoneNumber,
-    string Origin) : ICommand<Guid>;
+    string? PhoneNumber);

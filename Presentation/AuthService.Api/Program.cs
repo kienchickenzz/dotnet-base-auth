@@ -46,6 +46,7 @@ app.UseInfrastructure();
 app.UseInfrastructureIdentity();
 
 app.Services.AddOutBoxJob(builder.Configuration);
+app.Services.AddIdentityOutboxJob(builder.Configuration);
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {

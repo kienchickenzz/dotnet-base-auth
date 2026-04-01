@@ -35,6 +35,6 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
             request.Password,
             request.PhoneNumber);
 
-        return await _userService.CreateAsync(createUserDto, cancellationToken);
+        return await _userService.CreateAsync(createUserDto, request.Origin, cancellationToken);
     }
 }

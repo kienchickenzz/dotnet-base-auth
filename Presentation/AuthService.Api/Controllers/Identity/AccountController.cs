@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using AuthService.Api.Contracts.Identity;
 using AuthService.Api.Extensions;
 using AuthService.Application.Common.Extensions.Identity;
 using AuthService.Application.Features.Identities.Authentication;
@@ -111,9 +112,21 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<Guid>> RegisterAsync(
-        CreateUserCommand command,
+        CreateUserRequest request,
         CancellationToken cancellationToken)
     {
+        string origin = $"{Request.Scheme}://{Request.Host}";
+
+        var command = new CreateUserCommand(
+            request.FirstName,
+            request.LastName,
+            request.Email,
+            request.UserName,
+            request.Password,
+            request.ConfirmPassword,
+            request.PhoneNumber,
+            origin);
+
         var result = await _sender.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {

@@ -56,10 +56,13 @@ public interface IIdentityUserService
     // ============ Commands ============
 
     /// <summary>
-    /// Creates a new user.
+    /// Creates a new user and sends confirmation email.
     /// </summary>
+    /// <param name="user">User data.</param>
+    /// <param name="origin">Origin URL for building confirmation link.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result with user Id or error.</returns>
-    Task<Result<Guid>> CreateAsync(CreateUserDto user, CancellationToken cancellationToken = default);
+    Task<Result<Guid>> CreateAsync(CreateUserDto user, string origin, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates user profile.

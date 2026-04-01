@@ -19,12 +19,12 @@ using AuthService.Infrastructure.Settings;
 /// <summary>
 /// SMTP-based email sending service.
 /// </summary>
-public class SmtpMailService : IMailService
+public class MailkitMailService : IMailService
 {
     private readonly MailkitOptions _settings;
-    private readonly ILogger<SmtpMailService> _logger;
+    private readonly ILogger<MailkitMailService> _logger;
 
-    public SmtpMailService(IOptions<MailSettings> settings, ILogger<SmtpMailService> logger)
+    public MailkitMailService(IOptions<MailSettings> settings, ILogger<MailkitMailService> logger)
     {
         _settings = settings.Value.Mailkit
             ?? throw new InvalidOperationException("Mailkit settings not configured");

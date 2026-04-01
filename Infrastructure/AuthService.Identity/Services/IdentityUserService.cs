@@ -47,7 +47,7 @@ internal sealed class IdentityUserService : IIdentityUserService
         _mediator = mediator;
     }
 
-    // ============ Queries ============
+    #region Queries
 
     /// <inheritdoc />
     public async Task<Result<List<UserDto>>> GetUsersAsync(CancellationToken cancellationToken = default)
@@ -117,47 +117,56 @@ internal sealed class IdentityUserService : IIdentityUserService
             && user.Id != exceptId;
     }
 
-    // ============ Commands ============
+    #endregion
+
+    #region Commands
 
     /// <inheritdoc />
-    public async Task<Result<Guid>> CreateAsync(CreateUserDto userDto, CancellationToken cancellationToken = default)
+    public async Task<Result<Guid>> CreateAsync(
+        CreateUserDto userDto,
+        string origin,
+        CancellationToken cancellationToken = default)
     {
-        using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
-
-        try
+        // Transaction is managed by TransactionPipelineBehavior
+        var user = new ApplicationUser
         {
-            var user = new ApplicationUser
-            {
-                Email = userDto.Email,
-                FirstName = userDto.FirstName,
-                LastName = userDto.LastName,
-                UserName = userDto.UserName,
-                PhoneNumber = userDto.PhoneNumber,
-                IsActive = true
-            };
+            Email = userDto.Email,
+            FirstName = userDto.FirstName,
+            LastName = userDto.LastName,
+            UserName = userDto.UserName,
+            PhoneNumber = userDto.PhoneNumber,
+            IsActive = true
+        };
 
-            var result = await _userManager.CreateAsync(user, userDto.Password);
-            if (!result.Succeeded)
-            {
-                var errors = result.GetErrors();
-                return Result.Failure<Guid>(new Error(
-                    "User.CreateFailed",
-                    string.Join(", ", errors.Select(e => e.Name))));
-            }
-
-            await _userManager.AddToRoleAsync(user, Roles.Customer);
-
-            await transaction.CommitAsync(cancellationToken);
-
-            await _mediator.Publish(new UserCreatedEvent(user.Id), cancellationToken);
-
-            return user.Id;
-        }
-        catch (Exception ex)
+        var result = await _userManager.CreateAsync(user, userDto.Password);
+        if (!result.Succeeded)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            return Result.Failure<Guid>(new Error("User.CreateFailed", ex.Message));
+            var errors = result.GetErrors();
+            return Result.Failure<Guid>(new Error(
+                "User.CreateFailed",
+                string.Join(", ", errors.Select(e => e.Name))));
         }
+
+        // Save user first (required for AddToRoleAsync which calls UpdateUserAsync internally)
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await _userManager.AddToRoleAsync(user, Roles.Customer);
+
+        // Generate email confirmation token (requires user in DB)
+        string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        string encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+        // Raise domain event for sending confirmation email (saved to outbox by TransactionPipelineBehavior)
+        user.RaiseDomainEvent(new SendEmailConfirmationEvent(
+            user.Id,
+            user.Email!,
+            user.FirstName ?? user.UserName!,
+            encodedToken,
+            origin));
+
+        await _mediator.Publish(new UserCreatedEvent(user.Id), cancellationToken);
+
+        return user.Id;
     }
 
     /// <inheritdoc />
@@ -468,7 +477,9 @@ internal sealed class IdentityUserService : IIdentityUserService
         return Result.Success();
     }
 
-    // ============ Private Helpers ============
+    #endregion
+
+    #region Private Helpers
 
     /// <summary>
     /// Maps ApplicationUser to UserDto.
@@ -489,6 +500,8 @@ internal sealed class IdentityUserService : IIdentityUserService
             PhoneNumberConfirmed = user.PhoneNumberConfirmed
         };
     }
+
+    #endregion
 }
 
 

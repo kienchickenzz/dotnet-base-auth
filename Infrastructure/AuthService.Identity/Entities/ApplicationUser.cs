@@ -1,7 +1,7 @@
 ﻿/**
  * ApplicationUser extends IdentityUser with custom properties.
  *
- * <p>Includes audit trail and soft delete support.</p>
+ * <p>Includes audit trail, soft delete, and domain events support.</p>
  */
 namespace AuthService.Identity.Entities;
 
@@ -11,10 +11,12 @@ using AuthService.Domain.Common;
 
 
 /// <summary>
-/// Application user entity with audit and soft delete support.
+/// Application user entity with audit, soft delete, and domain events support.
 /// </summary>
-public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
+public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity, IHasDomainEvents
 {
+    private readonly List<IDomainEvent> _domainEvents = new();
+
     /// <summary>
     /// User's first name.
     /// </summary>
@@ -54,4 +56,17 @@ public class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
     // ISoftDelete (inherited from IAuditableEntity)
     public DateTime? DeletedOn { get; set; }
     public Guid? DeletedBy { get; set; }
+
+    // IHasDomainEvents
+
+    /// <inheritdoc />
+    public IReadOnlyList<IDomainEvent> GetDomainEvents() => _domainEvents.ToList();
+
+    /// <inheritdoc />
+    public void ClearDomainEvents() => _domainEvents.Clear();
+
+    /// <summary>
+    /// Raises a domain event to be published after save.
+    /// </summary>
+    public void RaiseDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
 }

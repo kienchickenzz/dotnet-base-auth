@@ -20,6 +20,8 @@ public static class DependencyInjection
             configuration.AddOpenBehavior(typeof(LoggingPipelineBehavior<,>));
 
             configuration.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
+
+            configuration.AddOpenBehavior(typeof(TransactionPipelineBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(assembly);

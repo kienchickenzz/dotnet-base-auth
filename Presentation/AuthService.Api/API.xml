@@ -4,6 +4,51 @@
         <name>AuthService.Api</name>
     </assembly>
     <members>
+        <member name="T:AuthService.Api.Contracts.Identity.CreateUserRequest">
+            <summary>
+            Request to create a new user.
+            </summary>
+            <param name="FirstName">User's first name.</param>
+            <param name="LastName">User's last name.</param>
+            <param name="Email">User's email address.</param>
+            <param name="UserName">User's username.</param>
+            <param name="Password">User's password.</param>
+            <param name="ConfirmPassword">Password confirmation.</param>
+            <param name="PhoneNumber">User's phone number (optional).</param>
+        </member>
+        <member name="M:AuthService.Api.Contracts.Identity.CreateUserRequest.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Request to create a new user.
+            </summary>
+            <param name="FirstName">User's first name.</param>
+            <param name="LastName">User's last name.</param>
+            <param name="Email">User's email address.</param>
+            <param name="UserName">User's username.</param>
+            <param name="Password">User's password.</param>
+            <param name="ConfirmPassword">Password confirmation.</param>
+            <param name="PhoneNumber">User's phone number (optional).</param>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.FirstName">
+            <summary>User's first name.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.LastName">
+            <summary>User's last name.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.Email">
+            <summary>User's email address.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.UserName">
+            <summary>User's username.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.Password">
+            <summary>User's password.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.ConfirmPassword">
+            <summary>Password confirmation.</summary>
+        </member>
+        <member name="P:AuthService.Api.Contracts.Identity.CreateUserRequest.PhoneNumber">
+            <summary>User's phone number (optional).</summary>
+        </member>
         <member name="T:AuthService.Api.Controllers.Identity.AccountController">
             <summary>
             Public account endpoints for registration, authentication and password recovery.
@@ -24,7 +69,7 @@
             Logout current user and revoke refresh token.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.AccountController.RegisterAsync(AuthService.Application.Features.Identities.Users.Commands.CreateUser.CreateUserCommand,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Controllers.Identity.AccountController.RegisterAsync(AuthService.Api.Contracts.Identity.CreateUserRequest,System.Threading.CancellationToken)">
             <summary>
             Register a new user account.
             </summary>
@@ -129,7 +174,7 @@
             Assigns roles to a user.
             </summary>
         </member>
-        <member name="M:AuthService.Api.Controllers.Identity.UsersController.CreateAsync(AuthService.Application.Features.Identities.Users.Commands.CreateUser.CreateUserCommand,System.Threading.CancellationToken)">
+        <member name="M:AuthService.Api.Controllers.Identity.UsersController.CreateAsync(AuthService.Api.Contracts.Identity.CreateUserRequest,System.Threading.CancellationToken)">
             <summary>
             Creates a new user (admin).
             </summary>

@@ -193,7 +193,7 @@ public static class DependencyInjection
                 break;
             case EmailProviderEnum.MailKit:
             default:
-                services.AddScoped<IMailService, SmtpMailService>();
+                services.AddScoped<IMailService, MailkitMailService>();
                 break;
         }
 

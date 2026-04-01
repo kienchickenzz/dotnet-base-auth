@@ -25,4 +25,10 @@
         <ProjectReference Include="..\..\Infrastructure\AuthService.Infrastructure\AuthService.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Update="EmailTemplates\**\*.cshtml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>

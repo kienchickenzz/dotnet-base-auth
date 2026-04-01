@@ -251,7 +251,7 @@ internal sealed class IdentityRoleService : IIdentityRoleService
                     CreatedBy = _currentUser.GetUserId(),
                     CreatedOn = DateTime.UtcNow
                 });
-                await _db.SaveChangesAsync(cancellationToken);
+                // SaveChanges is handled by TransactionPipelineBehavior
             }
         }
 

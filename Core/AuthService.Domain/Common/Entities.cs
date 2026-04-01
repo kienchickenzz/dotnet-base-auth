@@ -16,20 +16,25 @@ public abstract class BaseEntity : IAuditableEntity, ISoftDelete
     public Guid? DeletedBy { get; set; }
 }
 
-public abstract class BaseEntityRoot : BaseEntity, IAggregateRoot
+public abstract class BaseEntityRoot : BaseEntity, IAggregateRoot, IHasDomainEvents
 {
     private readonly List<IDomainEvent> _domainEvents = new();
 
+    /// <inheritdoc />
     public IReadOnlyList<IDomainEvent> GetDomainEvents()
     {
         return _domainEvents.ToList();
     }
 
+    /// <inheritdoc />
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
     }
 
+    /// <summary>
+    /// Raises a domain event to be published after save.
+    /// </summary>
     protected void RaiseDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 
 using Microsoft.AspNetCore.Mvc;
 
+using AuthService.Api.Contracts.Identity;
 using AuthService.Api.Extensions;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Application.Features.Identities.Users.Commands.AssignRoles;
@@ -96,9 +97,21 @@ public class UsersController : ControllerBase
     [HttpPost]
     [MustHavePermission(Actions.Create, Resource.Users)]
     public async Task<ActionResult<Guid>> CreateAsync(
-        CreateUserCommand command,
+        CreateUserRequest request,
         CancellationToken cancellationToken)
     {
+        string origin = $"{Request.Scheme}://{Request.Host}";
+
+        var command = new CreateUserCommand(
+            request.FirstName,
+            request.LastName,
+            request.Email,
+            request.UserName,
+            request.Password,
+            request.ConfirmPassword,
+            request.PhoneNumber,
+            origin);
+
         var result = await _sender.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
