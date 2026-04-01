@@ -43,8 +43,14 @@ public class RedisCacheService : ICacheService
 
         _logger.LogInformation(
             "Cache initialized: Redis (DefaultSlidingExpiration={Minutes}m)",
-            _settings.DefaultSlidingExpirationMinutes);
+            _DefaultSlidingExpirationMinutes);
     }
+
+    /// <summary>
+    /// Gets the default sliding expiration in minutes from settings.
+    /// </summary>
+    private int _DefaultSlidingExpirationMinutes =>
+        _settings.Redis?.DefaultSlidingExpirationMinutes ?? 10;
 
     public T? Get<T>(string key)
     {
@@ -53,7 +59,7 @@ public class RedisCacheService : ICacheService
         try
         {
             var data = _cache.Get(key);
-            return data is null ? default : Deserialize<T>(data);
+            return data is null ? default : _Deserialize<T>(data);
         }
         catch (Exception ex)
         {
@@ -69,7 +75,7 @@ public class RedisCacheService : ICacheService
         try
         {
             var data = await _cache.GetAsync(key, token);
-            return data is null ? default : Deserialize<T>(data);
+            return data is null ? default : _Deserialize<T>(data);
         }
         catch (Exception ex)
         {
@@ -131,7 +137,7 @@ public class RedisCacheService : ICacheService
     {
         try
         {
-            _cache.Set(key, Serialize(value), GetOptions(slidingExpiration));
+            _cache.Set(key, _Serialize(value), _GetOptions(slidingExpiration));
             _logger.LogDebug("Added to Redis Cache: {Key}", key);
         }
         catch (Exception ex)
@@ -144,7 +150,7 @@ public class RedisCacheService : ICacheService
     {
         try
         {
-            await _cache.SetAsync(key, Serialize(value), GetOptions(slidingExpiration), token);
+            await _cache.SetAsync(key, _Serialize(value), _GetOptions(slidingExpiration), token);
             _logger.LogDebug("Added to Redis Cache: {Key}", key);
         }
         catch (Exception ex)
@@ -153,18 +159,18 @@ public class RedisCacheService : ICacheService
         }
     }
 
-    private byte[] Serialize<T>(T item) =>
+    private byte[] _Serialize<T>(T item) =>
         Encoding.UTF8.GetBytes(_serializer.Serialize(item));
 
-    private T Deserialize<T>(byte[] cachedData) =>
+    private T _Deserialize<T>(byte[] cachedData) =>
         _serializer.Deserialize<T>(Encoding.UTF8.GetString(cachedData));
 
-    private DistributedCacheEntryOptions GetOptions(TimeSpan? slidingExpiration)
+    private DistributedCacheEntryOptions _GetOptions(TimeSpan? slidingExpiration)
     {
         return new DistributedCacheEntryOptions
         {
             SlidingExpiration = slidingExpiration
-                ?? TimeSpan.FromMinutes(_settings.DefaultSlidingExpirationMinutes)
+                ?? TimeSpan.FromMinutes(_DefaultSlidingExpirationMinutes)
         };
     }
 }

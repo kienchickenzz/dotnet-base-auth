@@ -38,8 +38,14 @@ public class InMemoryCacheService : ICacheService
 
         _logger.LogInformation(
             "Cache initialized: InMemory (DefaultSlidingExpiration={Minutes}m)",
-            _settings.DefaultSlidingExpirationMinutes);
+            _DefaultSlidingExpirationMinutes);
     }
+
+    /// <summary>
+    /// Gets the default sliding expiration in minutes from settings.
+    /// </summary>
+    private int _DefaultSlidingExpirationMinutes =>
+        _settings.InMemory?.DefaultSlidingExpirationMinutes ?? 10;
 
     public T? Get<T>(string key) =>
         _cache.Get<T>(key);
@@ -67,7 +73,7 @@ public class InMemoryCacheService : ICacheService
 
     public void Set<T>(string key, T value, TimeSpan? slidingExpiration = null)
     {
-        slidingExpiration ??= TimeSpan.FromMinutes(_settings.DefaultSlidingExpirationMinutes);
+        slidingExpiration ??= TimeSpan.FromMinutes(_DefaultSlidingExpirationMinutes);
 
         _cache.Set(key, value, new MemoryCacheEntryOptions
         {

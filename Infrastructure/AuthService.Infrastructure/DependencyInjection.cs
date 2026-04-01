@@ -81,13 +81,14 @@ public static class DependencyInjection
         services.AddSingleton<ICacheKeyService, CacheKeyService>();
 
         var useRedis = settings?.Provider == CacheProvider.Redis
-            && _TryConnectRedis(settings.RedisConnection);
+            && settings.Redis is not null
+            && _TryConnectRedis(settings.Redis.Connection);
 
         if (useRedis)
         {
             services.AddStackExchangeRedisCache(options =>
             {
-                options.Configuration = settings!.RedisConnection;
+                options.Configuration = settings!.Redis!.Connection;
             });
             services.AddSingleton<ICacheService, RedisCacheService>();
         }
