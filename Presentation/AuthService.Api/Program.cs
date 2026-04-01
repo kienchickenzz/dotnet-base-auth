@@ -4,6 +4,7 @@ using AuthService.Api.Configurations;
 using AuthService.Api.Extensions;
 using AuthService.Api.OpenApi;
 using AuthService.Identity;
+using AuthService.Identity.Initialization;
 using AuthService.Persistence;
 using AuthService.Persistence.Initialization;
 
@@ -29,7 +30,7 @@ builder.Services.AddInfrastureIdentity(builder.Configuration);
 var app = builder.Build();
 
 // Initialize database (migrate + seed)
-await app.Services.InitializeApplicationIdentityDatabaseAsync();
+await app.Services.InitializeIdentityDatabaseAsync();
 await app.Services.InitializeApplicationDatabaseAsync();
 
 app.UseCustomExceptionHandler();

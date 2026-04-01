@@ -33,11 +33,11 @@ internal class ApplicationDbSeeder
 
     public async Task SeedDatabaseAsync(ApplicationIdentityDbContext dbContext, CancellationToken cancellationToken)
     {
-        await SeedRolesAsync(dbContext);
-        await SeedAdminUserAsync();
+        await _SeedRolesAsync(dbContext);
+        await _SeedAdminUserAsync();
     }
 
-    private async Task SeedRolesAsync(ApplicationIdentityDbContext dbContext)
+    private async Task _SeedRolesAsync(ApplicationIdentityDbContext dbContext)
     {
         foreach (string roleName in Roles.DefaultRoles)
         {
@@ -53,16 +53,16 @@ internal class ApplicationDbSeeder
             // Assign permissions
             if (roleName == Roles.Customer)
             {
-                await AssignPermissionsToRoleAsync(dbContext, Permissions.Customer, role);
+                await _AssignPermissionsToRoleAsync(dbContext, Permissions.Customer, role);
             }
             else if (roleName == Roles.Admin)
             {
-                await AssignPermissionsToRoleAsync(dbContext, Permissions.Admin, role);
+                await _AssignPermissionsToRoleAsync(dbContext, Permissions.Admin, role);
             }
         }
     }
 
-    private async Task AssignPermissionsToRoleAsync(ApplicationIdentityDbContext dbContext, IReadOnlyList<Permission> permissions, ApplicationRole role)
+    private async Task _AssignPermissionsToRoleAsync(ApplicationIdentityDbContext dbContext, IReadOnlyList<Permission> permissions, ApplicationRole role)
     {
         var currentClaims = await _roleManager.GetClaimsAsync(role);
         foreach (var permission in permissions)
@@ -83,7 +83,7 @@ internal class ApplicationDbSeeder
         }
     }
 
-    private async Task SeedAdminUserAsync()
+    private async Task _SeedAdminUserAsync()
     {
         if (await _userManager.Users.FirstOrDefaultAsync(u => u.Email == _adminSetting.Email)
             is not ApplicationUser adminUser)

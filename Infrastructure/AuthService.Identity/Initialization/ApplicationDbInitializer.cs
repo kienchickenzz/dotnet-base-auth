@@ -1,39 +1,51 @@
-﻿namespace AuthService.Identity.Initialization;
+/**
+ * Extension method để initialize Identity database (migrate + seed).
+ *
+ * <p>Follows the same pattern as Persistence.ApplicationDbInitializer.</p>
+ */
+namespace AuthService.Identity.Initialization;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using AuthService.Identity.DatabaseContext;
 
 
-internal class ApplicationDbInitializer
+/// <summary>
+/// Extension methods for Identity database initialization.
+/// </summary>
+public static class ApplicationDbInitializer
 {
-    private readonly ApplicationIdentityDbContext _dbContext;
-    private readonly ApplicationDbSeeder _dbSeeder;
-    private readonly ILogger<ApplicationDbInitializer> _logger;
-
-    public ApplicationDbInitializer(ApplicationIdentityDbContext dbContext, ApplicationDbSeeder dbSeeder, ILogger<ApplicationDbInitializer> logger)
+    /// <summary>
+    /// Apply pending migrations và seed data cho Identity database.
+    /// </summary>
+    public static async Task InitializeIdentityDatabaseAsync(
+        this IServiceProvider services,
+        CancellationToken cancellationToken = default)
     {
-        _dbContext = dbContext;
-        _dbSeeder = dbSeeder;
-        _logger = logger;
-    }
+        using var scope = services.CreateScope();
 
-    public async Task InitializeAsync(CancellationToken cancellationToken)
-    {
-        if (_dbContext.Database.GetMigrations().Any())
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationIdentityDbContext>>();
+
+        if (!dbContext.Database.GetMigrations().Any())
         {
-            if ((await _dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
-            {
-                _logger.LogInformation("Applying Migrations for database");
-                await _dbContext.Database.MigrateAsync(cancellationToken);
-            }
+            return;
+        }
 
-            if (await _dbContext.Database.CanConnectAsync(cancellationToken))
-            {
-                _logger.LogInformation("Connection to database succeeded.");
-                await _dbSeeder.SeedDatabaseAsync(_dbContext, cancellationToken);
-            }
+        if ((await dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
+        {
+            logger.LogInformation("Applying Migrations for Identity database...");
+            await dbContext.Database.MigrateAsync(cancellationToken);
+        }
+
+        if (await dbContext.Database.CanConnectAsync(cancellationToken))
+        {
+            logger.LogInformation("Connection to Identity database succeeded.");
+
+            var seeder = scope.ServiceProvider.GetRequiredService<ApplicationDbSeeder>();
+            await seeder.SeedDatabaseAsync(dbContext, cancellationToken);
         }
     }
 }

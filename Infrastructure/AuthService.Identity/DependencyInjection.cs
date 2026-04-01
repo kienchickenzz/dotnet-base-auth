@@ -32,7 +32,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastureIdentity(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddTransient<ApplicationDbInitializer>();
         services.AddTransient<ApplicationDbSeeder>();
 
         // Authentication services (CQRS pattern)
@@ -60,16 +59,6 @@ public static class DependencyInjection
     public static IApplicationBuilder UseInfrastructureIdentity(this IApplicationBuilder builder) =>
         builder
             ._UseCurrentUser();
-
-    // TODO: hàm không thật sự đăng ký DI mà seed dữ liệu, nên đặt chỗ khác??
-    public static async Task InitializeApplicationIdentityDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
-    {
-        // Create a new scope to retrieve scoped services
-        using var scope = services.CreateScope();
-
-        await scope.ServiceProvider.GetRequiredService<ApplicationDbInitializer>()
-            .InitializeAsync(cancellationToken);
-    }
 
     // TODO: Đổi tên hàm này để phản ánh đúng hơn chức năng của nó
     private static IApplicationBuilder _UseCurrentUser(this IApplicationBuilder app) =>
