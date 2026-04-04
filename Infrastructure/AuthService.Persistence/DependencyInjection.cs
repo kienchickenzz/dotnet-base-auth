@@ -18,9 +18,22 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructurePersistence(this IServiceCollection services,
         IConfiguration configuration)
     {
-        string connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                                  throw new ArgumentNullException(nameof(configuration));
+        services
+            ._AddDatabase(configuration)
+            ._AddSettings(configuration);
 
+        return services;
+    }
+
+    /// <summary>
+    /// Configures EF Core DbContext, UnitOfWork pattern, and SQL connection factory.
+    /// </summary>
+    private static IServiceCollection _AddDatabase(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        string connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new ArgumentNullException(nameof(configuration));
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -32,21 +45,23 @@ public static class DependencyInjection
         services.AddSingleton<ISqlConnectionFactory>(_ =>
             new SqlConnectionFactory(connectionString));
 
-        services._AddOutbox(configuration);
-
         return services;
     }
 
-    private static IServiceCollection _AddOutbox(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// Registers configuration settings with IOptions pattern.
+    /// </summary>
+    private static IServiceCollection _AddSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<OutboxSettings>(configuration.GetSection("OutboxSettings"));
+        services.Configure<OutboxSettings>(configuration.GetSection(OutboxSettings.SectionName));
+
         return services;
     }
 
     /// <summary>
     /// Registers recurring job to process outbox messages.
     /// </summary>
-    public static void AddOutBoxJob(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static void AddOutBoxJob(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
 

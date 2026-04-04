@@ -46,8 +46,8 @@ app.MapControllers();
 app.UseInfrastructure();
 app.UseInfrastructureIdentity();
 
-app.Services.AddOutBoxJob(builder.Configuration);
-app.Services.AddIdentityOutboxJob(builder.Configuration);
+app.Services.AddOutBoxJob();
+app.Services.AddIdentityOutboxJob();
 
 app.Lifetime.ApplicationStarted.Register(() =>
 {

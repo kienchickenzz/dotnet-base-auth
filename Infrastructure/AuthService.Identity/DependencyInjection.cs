@@ -1,4 +1,4 @@
-﻿namespace AuthService.Identity;
+namespace AuthService.Identity;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,9 +14,7 @@ using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Common.ApplicationServices.Auth;
 using AuthService.Application.Common.ApplicationServices.BackgroundJob;
 using AuthService.Application.Common.ApplicationServices.Persistence;
-using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Features.Identities.Authentication.Services;
-using AuthService.Identity.Auth;
 using AuthService.Identity.Auth.Jwt;
 using AuthService.Identity.Auth.Permissions;
 using AuthService.Identity.DatabaseContext;
@@ -30,56 +28,83 @@ using AuthService.Identity.Settings;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastureIdentity(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// Registers all Identity infrastructure services.
+    /// </summary>
+    public static IServiceCollection AddInfrastureIdentity(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddTransient<ApplicationDbSeeder>();
 
-        // Authentication services (CQRS pattern)
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<ISignInService, SignInService>();
-
-        // New Identity abstractions (Application layer interfaces)
-        services.AddScoped<IIdentityUserService, IdentityUserService>();
-        services.AddScoped<IIdentityRoleService, IdentityRoleService>();
-        services.AddScoped<IIdentityPermissionService, IdentityPermissionService>();
-        services.AddScoped<IIdentityAuthService, IdentityAuthService>();
-
-        services.Configure<AdminSetting>(configuration.GetSection("SecuritySettings:AdminSettings"));
-
         services
-            ._AddIdentity(configuration)
-            ._AddJwtAuth(configuration)
-            ._AddCurrentUser()
-            ._AddPermissions()
-            ._AddOutbox(configuration);
+            ._AddDatabase(configuration)
+            ._AddSettings(configuration)
+            ._AddIdentity()
+            ._AddJwtAuth()
+            ._AddServices()
+            ._AddMiddlewares()
+            ._AddCurrentUserContext()
+            ._AddPermissions();
 
         return services;
     }
 
+    /// <summary>
+    /// Configures Identity middleware pipeline.
+    /// </summary>
     public static IApplicationBuilder UseInfrastructureIdentity(this IApplicationBuilder builder) =>
         builder
-            ._UseCurrentUser();
-
-    // TODO: Đổi tên hàm này để phản ánh đúng hơn chức năng của nó
-    private static IApplicationBuilder _UseCurrentUser(this IApplicationBuilder app) =>
-        app.UseMiddleware<CurrentUserMiddleware>();
+            .UseMiddleware<JwtCookieMiddleware>()
+            .UseMiddleware<CurrentUserMiddleware>();
 
     /// <summary>
-    /// Configures ASP.NET Core Identity with custom stores and Unit of Work pattern.
+    /// Configures DbContext, UnitOfWork, and SQL connection factory.
     /// </summary>
-    private static IServiceCollection _AddIdentity(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection _AddDatabase(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.AddDbContext<ApplicationIdentityDbContext>(options =>
-               options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        string connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new ArgumentNullException(nameof(configuration));
 
+        services.AddDbContext<ApplicationIdentityDbContext>(options =>
+            options.UseSqlServer(connectionString));
+
+        services.AddScoped<IIdentityUnitOfWork>(sp =>
+            sp.GetRequiredService<ApplicationIdentityDbContext>());
+
+        services.AddKeyedSingleton<ISqlConnectionFactory>(
+            "Identity",
+            (_, _) => new SqlConnectionFactory(connectionString));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers configuration settings with IOptions pattern.
+    /// </summary>
+    private static IServiceCollection _AddSettings(
+        this IServiceCollection services,
+        IConfiguration config)
+    {
+        services.Configure<AdminSettings>(config.GetSection(AdminSettings.SectionName));
+        services.Configure<OutboxSettings>(config.GetSection(OutboxSettings.SectionName));
+        services.Configure<JwtSettings>(config.GetSection(JwtSettings.SectionName));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures ASP.NET Core Identity with custom stores.
+    /// </summary>
+    private static IServiceCollection _AddIdentity(this IServiceCollection services)
+    {
         services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
                 .AddDefaultTokenProviders();
 
         // Configure UserStore with AutoSaveChanges = false
-        // Transaction is managed by TransactionPipelineBehavior
-        // Must specify all type parameters to match ApplicationIdentityDbContext
         services.AddScoped<IUserStore<ApplicationUser>>(sp =>
         {
             var context = sp.GetRequiredService<ApplicationIdentityDbContext>();
@@ -99,7 +124,6 @@ public static class DependencyInjection
         });
 
         // Configure RoleStore with AutoSaveChanges = false
-        // Must specify ApplicationRoleClaim instead of default IdentityRoleClaim<Guid>
         services.AddScoped<IRoleStore<ApplicationRole>>(sp =>
         {
             var context = sp.GetRequiredService<ApplicationIdentityDbContext>();
@@ -114,37 +138,15 @@ public static class DependencyInjection
             };
         });
 
-        // Register IIdentityUnitOfWork for transaction management
-        services.AddScoped<IIdentityUnitOfWork>(sp =>
-            sp.GetRequiredService<ApplicationIdentityDbContext>());
-
-        services.AddHttpContextAccessor();
-
         return services;
     }
-        
-    // TODO: Ý nghĩa hàm này là gì?
-    private static IServiceCollection _AddCurrentUser(this IServiceCollection services) =>
-        services
-            .AddScoped<CurrentUserMiddleware>()
-            .AddScoped<ICurrentUser, CurrentUser>()
-            .AddScoped(sp => (ICurrentUserInitializer) sp.GetRequiredService<ICurrentUser>());
 
-    private static IServiceCollection _AddPermissions(this IServiceCollection services) =>
-        services
-            .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
-            .AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-
-    private static IServiceCollection _AddJwtAuth(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// Configures JWT Bearer authentication.
+    /// </summary>
+    private static IServiceCollection _AddJwtAuth(this IServiceCollection services)
     {
-        // TODO: Dùng cách khác để load JwtSettings
-        services.AddOptions<JwtSettings>()
-            .BindConfiguration($"SecuritySettings:{nameof(JwtSettings)}")
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
-
         services.AddTransient<TokenValidatedJwtBearerEvents>();
 
         services
@@ -159,26 +161,55 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Configures outbox pattern for Identity bounded context.
+    /// Registers authentication and identity application services.
     /// </summary>
-    private static IServiceCollection _AddOutbox(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection _AddServices(this IServiceCollection services)
     {
-        string connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        // Authentication services (CQRS pattern)
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<ISignInService, SignInService>();
 
-        services.AddKeyedSingleton<ISqlConnectionFactory>(
-            "Identity",
-            (_, _) => new SqlConnectionFactory(connectionString));
-
-        services.Configure<OutboxSettings>(configuration.GetSection("IdentityOutboxSettings"));
+        // Identity abstractions (Application layer interfaces)
+        services.AddScoped<IIdentityUserService, IdentityUserService>();
+        services.AddScoped<IIdentityRoleService, IdentityRoleService>();
+        services.AddScoped<IIdentityPermissionService, IdentityPermissionService>();
+        services.AddScoped<IIdentityAuthService, IdentityAuthService>();
 
         return services;
     }
 
     /// <summary>
+    /// Registers middleware services (factory-based IMiddleware).
+    /// </summary>
+    private static IServiceCollection _AddMiddlewares(this IServiceCollection services)
+    {
+        services.AddScoped<JwtCookieMiddleware>();
+        services.AddScoped<CurrentUserMiddleware>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers ICurrentUser and ICurrentUserInitializer for request-scoped user context.
+    /// </summary>
+    private static IServiceCollection _AddCurrentUserContext(this IServiceCollection services) =>
+        services
+            .AddScoped<ICurrentUser, CurrentUser>()
+            .AddScoped(sp => (ICurrentUserInitializer)sp.GetRequiredService<ICurrentUser>());
+
+    /// <summary>
+    /// Registers permission-based authorization handlers.
+    /// </summary>
+    private static IServiceCollection _AddPermissions(this IServiceCollection services) =>
+        services
+            .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
+            .AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+    /// <summary>
     /// Registers recurring job to process Identity outbox messages.
     /// </summary>
-    public static void AddIdentityOutboxJob(this IServiceProvider serviceProvider, IConfiguration configuration)
+    public static void AddIdentityOutboxJob(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
 

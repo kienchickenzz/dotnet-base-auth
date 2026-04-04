@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 
 using AuthService.Application.Common.Exceptions;
+using AuthService.Identity.Settings;
 
 
 public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions>

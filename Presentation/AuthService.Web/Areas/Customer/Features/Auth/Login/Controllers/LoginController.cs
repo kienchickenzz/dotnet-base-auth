@@ -1,11 +1,11 @@
 /**
- * LoginController handles customer authentication login flow.
+ * LoginController handles customer authentication using JWT.
  *
- * <p>Thin controller - delegates to MediatR command handler.</p>
+ * <p>Thin controller - delegates to MediatR, stores JWT in HttpOnly cookie.</p>
  */
 
-using AuthService.Application.Features.Identities.Authentication.Commands.CustomerLogin;
-using AuthService.Application.Features.Identities.Authentication.Services;
+using AuthService.Application.Features.Identities.Authentication.Commands.Login;
+using AuthService.Identity.Middlewares;
 using AuthService.Web.Areas.Customer.Features.Auth.Login.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +13,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace AuthService.Web.Areas.Customer.Features.Auth.Login.Controllers;
 
 /// <summary>
-/// Controller for customer login functionality.
+/// Controller for customer login functionality using JWT.
 /// </summary>
 [Area("Customer")]
 public class LoginController : Controller
 {
     private readonly IMediator _mediator;
-    private readonly ISignInService _signInService;
     private readonly ILogger<LoginController> _logger;
 
     /// <summary>
@@ -27,11 +26,9 @@ public class LoginController : Controller
     /// </summary>
     public LoginController(
         IMediator mediator,
-        ISignInService signInService,
         ILogger<LoginController> logger)
     {
         _mediator = mediator;
-        _signInService = signInService;
         _logger = logger;
     }
 
@@ -39,15 +36,17 @@ public class LoginController : Controller
     /// Displays the login form.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Login(string? returnUrl = null)
+    public IActionResult Login(string? returnUrl = null)
     {
-        // Clear external cookie
-        await _signInService.SignOutExternalSchemeAsync();
+        // Redirect to home if already logged in
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home", new { area = "" });
+        }
 
         var model = new LoginViewModel
         {
-            ReturnUrl = returnUrl ?? Url.Content("~/"),
-            ExternalLogins = await _signInService.GetExternalAuthenticationSchemesAsync()
+            ReturnUrl = returnUrl ?? Url.Content("~/")
         };
 
         return View(model);
@@ -60,16 +59,18 @@ public class LoginController : Controller
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         model.ReturnUrl ??= Url.Content("~/");
-        model.ExternalLogins = await _signInService.GetExternalAuthenticationSchemesAsync();
 
         if (!ModelState.IsValid)
             return View(model);
 
-        // Thin controller: delegate to MediatR
-        var command = new CustomerLoginCommand(
+        // Get client IP address
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // Call LoginCommand (reuse existing JWT infrastructure)
+        var command = new LoginCommand(
             model.Email,
             model.Password,
-            model.RememberMe);
+            ipAddress);
 
         var result = await _mediator.Send(command);
 
@@ -80,31 +81,54 @@ public class LoginController : Controller
             return View(model);
         }
 
-        var loginResult = result.Value;
+        var tokenResponse = result.Value;
 
-        // Handle success cases
-        if (loginResult.Succeeded)
+        // Store JWT in HttpOnly cookie
+        _SetTokenCookies(tokenResponse.Token, tokenResponse.RefreshToken, model.RememberMe);
+
+        _logger.LogInformation("User {Email} logged in.", model.Email);
+
+        return LocalRedirect(model.ReturnUrl);
+    }
+
+    /// <summary>
+    /// Logs out the current user by clearing cookies.
+    /// </summary>
+    [HttpPost]
+    public IActionResult Logout()
+    {
+        // Clear cookies
+        Response.Cookies.Delete(JwtCookieMiddleware.AccessTokenCookieName);
+        Response.Cookies.Delete(JwtCookieMiddleware.RefreshTokenCookieName);
+
+        _logger.LogInformation("User logged out.");
+
+        return RedirectToAction("Index", "Home", new { area = "" });
+    }
+
+    /// <summary>
+    /// Sets JWT tokens in HttpOnly cookies.
+    /// </summary>
+    private void _SetTokenCookies(string accessToken, string refreshToken, bool rememberMe)
+    {
+        var cookieOptions = new CookieOptions
         {
-            _logger.LogInformation("User {Email} logged in.", model.Email);
-            return LocalRedirect(model.ReturnUrl);
-        }
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = rememberMe
+                ? DateTimeOffset.UtcNow.AddDays(7)
+                : null
+        };
 
-        if (loginResult.RequiresTwoFactor)
-        {
-            return RedirectToAction("LoginWith2fa", new
-            {
-                ReturnUrl = model.ReturnUrl,
-                RememberMe = model.RememberMe
-            });
-        }
+        Response.Cookies.Append(
+            JwtCookieMiddleware.AccessTokenCookieName,
+            accessToken,
+            cookieOptions);
 
-        if (loginResult.IsLockedOut)
-        {
-            _logger.LogWarning("User {Email} account locked out.", model.Email);
-            return RedirectToAction("Lockout");
-        }
-
-        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-        return View(model);
+        Response.Cookies.Append(
+            JwtCookieMiddleware.RefreshTokenCookieName,
+            refreshToken,
+            cookieOptions);
     }
 }

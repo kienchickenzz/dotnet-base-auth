@@ -12,6 +12,8 @@ namespace AuthService.Identity.Settings;
 /// </summary>
 public sealed class OutboxSettings
 {
+    public const string SectionName = "IdentityOutboxSettings";
+
     /// <summary>
     /// Interval in minutes between outbox processing runs (used for cron scheduling).
     /// </summary>

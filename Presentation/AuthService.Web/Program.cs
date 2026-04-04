@@ -42,6 +42,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Identity middleware (JwtCookie + CurrentUser)
+app.UseInfrastructureIdentity();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Area routes: /customer/product/index -> Areas/Customer/Features/Product/Controllers/ProductController.Index()

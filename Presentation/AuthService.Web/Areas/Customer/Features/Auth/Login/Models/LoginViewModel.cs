@@ -1,11 +1,10 @@
 /**
  * LoginViewModel represents the data for customer login form.
  *
- * <p>Contains user credentials and authentication options.</p>
+ * <p>Contains user credentials for JWT-based authentication.</p>
  */
 
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authentication;
 
 namespace AuthService.Web.Areas.Customer.Features.Auth.Login.Models;
 
@@ -38,9 +37,4 @@ public class LoginViewModel
     /// URL to redirect after successful login.
     /// </summary>
     public string? ReturnUrl { get; set; }
-
-    /// <summary>
-    /// List of external authentication providers.
-    /// </summary>
-    public IList<AuthenticationScheme> ExternalLogins { get; set; } = [];
 }

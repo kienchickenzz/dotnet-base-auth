@@ -1,0 +1,12 @@
+@if (TempData.TryGetValue(key: "success", out object? successValue))
+{
+    <script type="text/javascript">
+        toastr.success('@successValue');
+    </script>
+}
+@if (TempData.TryGetValue(key: "error", out object? errorValue))
+{
+    <script type="text/javascript">
+        toastr.error('@errorValue');
+    </script>
+}

@@ -15,7 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 
 using AuthService.Application.Features.Identities.Authentication.Services;
 using AuthService.Domain.Constants.Identity;
-using AuthService.Identity.Auth.Jwt;
+using AuthService.Identity.Settings;
 
 
 /// <summary>
