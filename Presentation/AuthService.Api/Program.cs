@@ -1,6 +1,5 @@
 using AuthService.Application;
 using AuthService.Infrastructure;
-using AuthService.Api.Configurations;
 using AuthService.Api.Extensions;
 using AuthService.Api.OpenApi;
 using AuthService.Identity;
@@ -16,7 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
-builder.AddConfigurations();
 builder.Host.UseSerilogFromSettings();
 
 builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();

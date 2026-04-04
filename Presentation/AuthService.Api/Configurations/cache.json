@@ -1,7 +1,0 @@
-{
-    "CacheSettings": {
-        "Provider": "InMemory",
-        "RedisConnection": "localhost:6379,password=Pa55w.rd,abortConnect=false",
-        "DefaultSlidingExpirationMinutes": 10
-    }
-}
