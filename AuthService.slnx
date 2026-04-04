@@ -1,6 +1,7 @@
 <Solution>
     <Folder Name="/Presentation/">
         <Project Path="Presentation/AuthService.Api/AuthService.Api.csproj" />
+        <Project Path="Presentation/AuthService.Web/AuthService.Web.csproj" />
     </Folder>
     <Folder Name="/Core/">
         <Project Path="Core/AuthService.Application/AuthService.Application.csproj" />

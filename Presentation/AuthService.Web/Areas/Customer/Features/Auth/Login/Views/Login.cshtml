@@ -1,0 +1,78 @@
+@model AuthService.Web.Areas.Customer.Features.Auth.Login.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="card col-md-6 shadow border-0 mt-4">
+        <div class="card-header bg-dark bg-gradient m-lg-0 py-4">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="py-2 text-white">@ViewData["Title"]</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12 col-md-offset-2 mt-4 mx-4 ">
+            <section>
+                @{
+                    <form id="external-account" asp-action="ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
+                        <div>
+                            <p>
+                                @foreach (var provider in Model?.ExternalLogins!)
+                                {
+                                    <button type="submit" class="btn btn-outline-info" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
+                                }
+                            </p>
+                        </div>
+                    </form>
+                }
+            </section>
+        </div>
+        <hr class="mt-4 pt-4 mb-0 pb-0" />
+        <div class="card-body p-4 pt-1">
+            <div class="row">
+                <div class="col-md-12">
+                    <section>
+                        <form id="account" method="post">
+                            <h4 class="border-bottom pb-3 mb-4 text-secondary text-center">Use a local account to log in.</h4>
+                            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                                <label asp-for="Email" class="form-label">Email</label>
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                                <label asp-for="Password" class="form-label">Password</label>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                            <div class="checkbox mb-3">
+                                <label asp-for="RememberMe" class="form-label">
+                                    <input class="form-check-input" asp-for="RememberMe" />
+                                    @Html.DisplayNameFor(m => m.RememberMe)
+                                </label>
+                            </div>
+                            <div>
+                                <button id="login-submit" type="submit" class="w-100 btn btn-primary">Log in</button>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2">
+                                <p>
+                                    <a id="forgot-password" asp-action="ForgotPassword">Forgot your password?</a>
+                                </p>
+                                <p>
+                                    <a id="resend-confirmation" asp-action="ResendEmailConfirmation">Resend email confirmation</a>
+                                </p>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -37,6 +37,7 @@ public static class DependencyInjection
         // Authentication services (CQRS pattern)
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<ISignInService, SignInService>();
 
         // New Identity abstractions (Application layer interfaces)
         services.AddScoped<IIdentityUserService, IdentityUserService>();
