@@ -109,16 +109,25 @@ public class LoginController : Controller
     /// <summary>
     /// Sets JWT tokens in HttpOnly cookies.
     /// </summary>
+    /// <remarks>
+    /// Cookie settings explained:
+    /// - HttpOnly: Prevents JavaScript access (XSS protection)
+    /// - Secure: Cookie only sent over HTTPS
+    /// - Path="/": Cookie available for all paths (default is current request path)
+    /// - SameSite=Lax: Consistent with ExternalLoginController. Sends cookies on
+    ///   top-level navigations while protecting against CSRF on cross-site POST.
+    ///   Note: Strict would also work here, but Lax is used for consistency.
+    /// - Expires: Session cookie (null) or persistent (7 days) based on RememberMe.
+    /// </remarks>
     private void _SetTokenCookies(string accessToken, string refreshToken, bool rememberMe)
     {
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = rememberMe
-                ? DateTimeOffset.UtcNow.AddDays(7)
-                : null
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            Expires = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : null
         };
 
         Response.Cookies.Append(

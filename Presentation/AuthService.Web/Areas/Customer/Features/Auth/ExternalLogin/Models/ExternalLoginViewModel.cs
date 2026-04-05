@@ -43,6 +43,24 @@ public class ExternalLoginViewModel
     public string? PhoneNumber { get; set; }
 
     /// <summary>
+    /// User's password for local login.
+    /// </summary>
+    [Required]
+    [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+    [DataType(DataType.Password)]
+    [Display(Name = "Password")]
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Password confirmation (must match Password).
+    /// </summary>
+    [Required]
+    [DataType(DataType.Password)]
+    [Display(Name = "Confirm Password")]
+    [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+    public string ConfirmPassword { get; set; } = string.Empty;
+
+    /// <summary>
     /// Display name of the external provider.
     /// </summary>
     public string ProviderDisplayName { get; set; } = string.Empty;

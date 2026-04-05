@@ -41,6 +41,18 @@
                 <span asp-validation-for="PhoneNumber" class="text-danger"></span>
             </div>
 
+            <div class="form-floating mb-3">
+                <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="Password" />
+                <label asp-for="Password" class="form-label"></label>
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Confirm Password" />
+                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
             <input type="hidden" asp-for="ReturnUrl" />
             <input type="hidden" asp-for="ProviderDisplayName" />
 

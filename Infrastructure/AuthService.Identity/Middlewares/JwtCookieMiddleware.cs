@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using AuthService.Identity.Settings;
@@ -21,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 public class JwtCookieMiddleware : IMiddleware
 {
     private readonly JwtSettings _jwtSettings;
+    private readonly ILogger<JwtCookieMiddleware> _logger;
 
     /// <summary>
     /// Cookie name for access token.
@@ -35,9 +37,12 @@ public class JwtCookieMiddleware : IMiddleware
     /// <summary>
     /// Initializes middleware with JWT settings.
     /// </summary>
-    public JwtCookieMiddleware(IOptions<JwtSettings> jwtSettings)
+    public JwtCookieMiddleware(
+        IOptions<JwtSettings> jwtSettings,
+        ILogger<JwtCookieMiddleware> logger)
     {
         _jwtSettings = jwtSettings.Value;
+        _logger = logger;
     }
 
     /// <summary>
@@ -57,10 +62,10 @@ public class JwtCookieMiddleware : IMiddleware
                     context.User = principal;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Token invalid or expired - User remains unauthenticated
-                // Could add refresh token logic here
+                _logger.LogDebug("JWT token validation failed: {Message}", ex.Message);
             }
         }
 

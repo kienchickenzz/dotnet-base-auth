@@ -2,6 +2,12 @@
  * ExternalAuthService implements external authentication operations.
  *
  * <p>Uses SignInManager for OAuth provider integration.</p>
+ *
+ * <p>IMPORTANT: This service works with TWO data sources:</p>
+ * <ul>
+ *   <li>OAuth Provider (Google, Facebook): GetExternalLoginInfoAsync</li>
+ *   <li>Local Database: ExternalLoginAsync, CreateUserWithExternalLoginAsync</li>
+ * </ul>
  */
 namespace AuthService.Identity.Services;
 
@@ -48,11 +54,15 @@ public class ExternalAuthService : IExternalAuthService
     /// <inheritdoc />
     public async Task<Result<ExternalLoginInfoDto>> GetExternalLoginInfoAsync()
     {
+        // Read temporary "Identity.External" cookie set by OAuth middleware
+        // This cookie was created at /signin-google after user consented
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
             return Result.Failure<ExternalLoginInfoDto>(AuthenticationErrors.ExternalLoginInfoNotFound);
 
-        // Extract user info from claims
+        // Extract user info from OAuth claims (data from Google, not our DB)
+        // ProviderKey = Google's unique user ID (e.g., "117234567890123456")
+        // This is NOT the email - it's a stable identifier for the Google account
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         var firstName = info.Principal.FindFirstValue(ClaimTypes.GivenName)
                        ?? info.Principal.FindFirstValue(ClaimTypes.Name)?.Split(' ').FirstOrDefault();
@@ -60,11 +70,11 @@ public class ExternalAuthService : IExternalAuthService
                       ?? info.Principal.FindFirstValue(ClaimTypes.Name)?.Split(' ').LastOrDefault();
 
         return new ExternalLoginInfoDto(
-            info.LoginProvider,
-            info.ProviderKey,
+            info.LoginProvider,    // "Google"
+            info.ProviderKey,      // Google's unique user ID (NOT email)
             info.ProviderDisplayName ?? info.LoginProvider,
-            email,
-            firstName,
+            email,                 // Email from Google profile
+            firstName,             // Name from Google profile
             lastName);
     }
 
@@ -74,21 +84,18 @@ public class ExternalAuthService : IExternalAuthService
         string providerKey,
         CancellationToken cancellationToken = default)
     {
-        // Try external login sign-in (bypasses two-factor)
-        var result = await _signInManager.ExternalLoginSignInAsync(
-            loginProvider,
-            providerKey,
-            isPersistent: false,
-            bypassTwoFactor: true);
-
-        if (!result.Succeeded)
-            return Result.Failure<UserDto>(AuthenticationErrors.ExternalLoginFailed);
-
-        // Get user by external login
+        // Query AspNetUserLogins table: (LoginProvider, ProviderKey) → UserId
+        // Then join with AspNetUsers to get full profile
+        // Note: Don't use SignInAsync - we use JWT authentication, not Identity cookies
         var user = await _userManager.FindByLoginAsync(loginProvider, providerKey);
         if (user == null)
-            return Result.Failure<UserDto>(AuthenticationErrors.UserNotFound);
+            return Result.Failure<UserDto>(AuthenticationErrors.ExternalLoginFailed);
 
+        // Check user status (from our DB, not from Google)
+        if (!user.IsActive)
+            return Result.Failure<UserDto>(AuthenticationErrors.UserNotActive);
+
+        // Return OUR stored profile, not Google's data
         return _MapToUserDto(user);
     }
 
@@ -110,15 +117,15 @@ public class ExternalAuthService : IExternalAuthService
             EmailConfirmed = true // External providers verify email
         };
 
-        // Create user without password
-        var createResult = await _userManager.CreateAsync(user);
+        // Create user with password for local login capability
+        var createResult = await _userManager.CreateAsync(user, userDto.Password);
         if (!createResult.Succeeded)
         {
             var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
             return Result.Failure<Guid>(new Error("User.CreateFailed", errors));
         }
 
-        // Save user first (required because UserStore has AutoSaveChanges = false)
+        // Save user first (required for AddLoginAsync to reference valid user)
         await _db.SaveChangesAsync(cancellationToken);
 
         // Link external login

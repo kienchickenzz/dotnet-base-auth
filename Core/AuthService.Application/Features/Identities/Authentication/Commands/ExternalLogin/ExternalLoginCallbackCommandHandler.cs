@@ -40,24 +40,37 @@ public sealed class ExternalLoginCallbackCommandHandler
         ExternalLoginCallbackCommand request,
         CancellationToken cancellationToken)
     {
-        // Get external login info from OAuth callback
+        // ┌─────────────────────────────────────────────────────────────────┐
+        // │ STEP 1: Get info FROM OAUTH PROVIDER (Google, Facebook, etc.)  │
+        // │ Data source: Temporary cookie set by OAuth middleware          │
+        // │ Returns: ProviderKey (Google's user ID), email, name           │
+        // └─────────────────────────────────────────────────────────────────┘
         var externalInfoResult = await _externalAuthService.GetExternalLoginInfoAsync();
         if (externalInfoResult.IsFailure)
             return Result.Failure<ExternalLoginCallbackResponse>(externalInfoResult.Error);
 
         var externalInfo = externalInfoResult.Value;
 
-        // Try to sign in with existing external login
+        // ┌─────────────────────────────────────────────────────────────────┐
+        // │ STEP 2: Find user FROM LOCAL DATABASE using ProviderKey        │
+        // │ Data source: AspNetUserLogins + AspNetUsers tables             │
+        // │ Returns: Our stored profile (may differ from Google's data)    │
+        // └─────────────────────────────────────────────────────────────────┘
         var loginResult = await _externalAuthService.ExternalLoginAsync(
             externalInfo.LoginProvider,
             externalInfo.ProviderKey,
             cancellationToken);
 
-        // User exists - generate JWT
+        // ┌─────────────────────────────────────────────────────────────────┐
+        // │ CASE A: User EXISTS in our database → Generate JWT             │
+        // │ Use profile FROM DATABASE (not from Google) for JWT claims     │
+        // └─────────────────────────────────────────────────────────────────┘
         if (loginResult.IsSuccess)
         {
+            // user = profile from OUR database, not from Google
             var user = loginResult.Value;
 
+            // Generate JWT using OUR stored data (user.Email may differ from externalInfo.Email)
             var accessToken = _tokenGenerator.GenerateAccessToken(
                 user.Id,
                 user.Email,
@@ -70,7 +83,6 @@ public sealed class ExternalLoginCallbackCommandHandler
             var refreshToken = _tokenGenerator.GenerateRefreshToken();
             var refreshTokenExpiry = _tokenGenerator.GetRefreshTokenExpiryTime();
 
-            // Update refresh token
             await _authService.UpdateRefreshTokenAsync(
                 user.Id,
                 refreshToken,
@@ -92,7 +104,11 @@ public sealed class ExternalLoginCallbackCommandHandler
             };
         }
 
-        // User doesn't exist - return info for registration
+        // ┌─────────────────────────────────────────────────────────────────┐
+        // │ CASE B: User NOT in database → Return Google's info for form   │
+        // │ Controller will show confirmation form pre-filled with         │
+        // │ externalInfo (email, name from Google) for user to review      │
+        // └─────────────────────────────────────────────────────────────────┘
         _logger.LogInformation(
             "New user from {Provider}, email: {Email}",
             externalInfo.LoginProvider,

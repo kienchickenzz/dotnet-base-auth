@@ -52,13 +52,13 @@ public sealed class ExternalLoginConfirmationCommandHandler
 
         var externalInfo = externalInfoResult.Value;
 
-        // Create user DTO (no password for external login)
+        // Create user DTO with password for local login capability
         var createUserDto = new CreateUserDto(
             request.FirstName,
             request.LastName,
             request.Email,
             request.Email,  // UserName = Email
-            Password: null, // No password for external login
+            request.Password,
             request.PhoneNumber);
 
         // Create user and link external login

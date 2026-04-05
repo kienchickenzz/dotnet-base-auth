@@ -73,6 +73,7 @@ public class ExternalLoginController : Controller
         var command = new ExternalLoginCallbackCommand(ipAddress);
         var result = await _mediator.Send(command);
 
+        // TODO: Trường hợp user hủy login trên provider thì sao? remoteError có được set không?
         if (result.IsFailure)
         {
             TempData["Error"] = result.Error.Name;
@@ -84,6 +85,7 @@ public class ExternalLoginController : Controller
         // Existing user - set cookies and redirect
         if (response.IsExistingUser && response.Token != null)
         {
+            // TODO: Redirect về trang home đã đăng nhập thay vì landing page
             _SetTokenCookies(response.Token.Token, response.Token.RefreshToken);
             _logger.LogInformation("User logged in via external provider.");
             return LocalRedirect(returnUrl);
@@ -127,6 +129,7 @@ public class ExternalLoginController : Controller
             model.FirstName,
             model.LastName,
             model.PhoneNumber,
+            model.Password,
             ipAddress,
             origin);
 
@@ -142,19 +145,36 @@ public class ExternalLoginController : Controller
         _SetTokenCookies(result.Value.Token, result.Value.RefreshToken);
         _logger.LogInformation("User {Email} created via external provider.", model.Email);
 
+        // TODO: Redirect về trang home đã đăng nhập thay vì landing page
         return LocalRedirect(model.ReturnUrl);
     }
 
     /// <summary>
     /// Sets JWT tokens in HttpOnly cookies.
     /// </summary>
+    /// <remarks>
+    /// Cookie settings explained:
+    /// - HttpOnly: Prevents JavaScript access (XSS protection)
+    /// - Secure: Cookie only sent over HTTPS
+    /// - Path="/": Cookie available for all paths (default is current request path)
+    /// - SameSite=Lax: IMPORTANT for OAuth flows!
+    ///
+    ///   Why not Strict? After OAuth redirect (Google → callback → home), the browser
+    ///   considers this a "cross-site initiated" navigation. With SameSite=Strict,
+    ///   cookies are NOT sent on the first redirect, causing the navbar to show
+    ///   unauthenticated state even though login succeeded.
+    ///
+    ///   Lax sends cookies on top-level GET navigations/redirects while still
+    ///   protecting against CSRF on cross-site POST requests.
+    /// </remarks>
     private void _SetTokenCookies(string accessToken, string refreshToken)
     {
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Strict
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
         };
 
         Response.Cookies.Append(JwtCookieMiddleware.AccessTokenCookieName, accessToken, cookieOptions);

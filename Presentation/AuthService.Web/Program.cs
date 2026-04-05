@@ -42,10 +42,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
+
 // Identity middleware (JwtCookie + CurrentUser)
+// Must run AFTER UseAuthentication to override context.User with JWT from cookie
 app.UseInfrastructureIdentity();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 // Area routes: /customer/product/index -> Areas/Customer/Features/Product/Controllers/ProductController.Index()

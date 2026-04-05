@@ -20,5 +20,5 @@ public sealed record CreateUserDto(
     string LastName,
     string Email,
     string UserName,
-    string? Password,
+    string Password,
     string? PhoneNumber);
