@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Features.Identities.Authentication.Services;
 using AuthService.Domain.Common;
+using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
 
 
@@ -19,10 +20,14 @@ using AuthService.Identity.Entities;
 internal sealed class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationIdentityDbContext _db;
 
-    public AuthenticationService(UserManager<ApplicationUser> userManager)
+    public AuthenticationService(
+        UserManager<ApplicationUser> userManager,
+        ApplicationIdentityDbContext db)
     {
         _userManager = userManager;
+        _db = db;
     }
 
     /// <inheritdoc />
@@ -108,9 +113,12 @@ internal sealed class AuthenticationService : IAuthenticationService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is not null)
         {
+            // Update directly without UserManager.UpdateAsync to avoid
+            // ConcurrencyStamp conflict when entity is already tracked
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = expiryTime;
-            await _userManager.UpdateAsync(user);
+            // Note: Don't call SaveChangesAsync here - let TransactionPipelineBehavior handle it
+            // to avoid concurrency issues with newly created users
         }
     }
 
@@ -122,9 +130,11 @@ internal sealed class AuthenticationService : IAuthenticationService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is not null)
         {
+            // Update directly without UserManager.UpdateAsync to avoid
+            // ConcurrencyStamp conflict when entity is already tracked
             user.RefreshToken = string.Empty;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1);
-            await _userManager.UpdateAsync(user);
+            // Note: Don't call SaveChangesAsync here - let TransactionPipelineBehavior handle it
         }
     }
 

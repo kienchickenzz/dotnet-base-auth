@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Domain.Common;
+using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
 
 
@@ -19,10 +20,14 @@ using AuthService.Identity.Entities;
 internal sealed class IdentityAuthService : IIdentityAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationIdentityDbContext _db;
 
-    public IdentityAuthService(UserManager<ApplicationUser> userManager)
+    public IdentityAuthService(
+        UserManager<ApplicationUser> userManager,
+        ApplicationIdentityDbContext db)
     {
         _userManager = userManager;
+        _db = db;
     }
 
     /// <inheritdoc />
@@ -108,9 +113,11 @@ internal sealed class IdentityAuthService : IIdentityAuthService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is not null)
         {
+            // Update directly without UserManager.UpdateAsync to avoid
+            // ConcurrencyStamp conflict when entity is already tracked
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = expiryTime;
-            await _userManager.UpdateAsync(user);
+            // Note: Don't call SaveChangesAsync here - let TransactionPipelineBehavior handle it
         }
     }
 

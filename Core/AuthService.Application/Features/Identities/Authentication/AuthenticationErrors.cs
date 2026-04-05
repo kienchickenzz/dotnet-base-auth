@@ -37,4 +37,24 @@ public static class AuthenticationErrors
     public static readonly Error InvalidRefreshToken = new(
         "Authentication.InvalidRefreshToken",
         "Invalid or expired refresh token.");
+
+    /// <summary>User not found.</summary>
+    public static readonly Error UserNotFound = new(
+        "Authentication.UserNotFound",
+        "User not found.");
+
+    /// <summary>External login info not found in callback.</summary>
+    public static readonly Error ExternalLoginInfoNotFound = new(
+        "Authentication.ExternalLoginInfoNotFound",
+        "External login information not found.");
+
+    /// <summary>External login sign-in failed (user doesn't exist).</summary>
+    public static readonly Error ExternalLoginFailed = new(
+        "Authentication.ExternalLoginFailed",
+        "External login failed. User does not exist.");
+
+    /// <summary>Failed to link external login to user.</summary>
+    public static readonly Error ExternalLoginLinkFailed = new(
+        "Authentication.ExternalLoginLinkFailed",
+        "Failed to link external login to user account.");
 }

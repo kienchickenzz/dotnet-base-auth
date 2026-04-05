@@ -42,6 +42,7 @@ public static class DependencyInjection
             ._AddSettings(configuration)
             ._AddIdentity()
             ._AddJwtAuth()
+            ._AddExternalAuthProviders(configuration)
             ._AddServices()
             ._AddMiddlewares()
             ._AddCurrentUserContext()
@@ -119,7 +120,7 @@ public static class DependencyInjection
                 IdentityUserToken<Guid>,
                 ApplicationRoleClaim>(context)
             {
-                AutoSaveChanges = false
+                AutoSaveChanges = true
             };
         });
 
@@ -161,6 +162,41 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Configures external authentication providers (Google, Facebook, etc.).
+    /// </summary>
+    private static IServiceCollection _AddExternalAuthProviders(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var authBuilder = services.AddAuthentication();
+
+        // Google authentication
+        var googleSection = configuration.GetSection("Authentication:Google");
+        if (googleSection.Exists())
+        {
+            authBuilder.AddGoogle(options =>
+            {
+                options.ClientId = googleSection["ClientId"]!;
+                options.ClientSecret = googleSection["ClientSecret"]!;
+                options.CallbackPath = "/signin-google"; // Default
+            });
+        }
+
+        // Facebook authentication
+        var facebookSection = configuration.GetSection("Authentication:Facebook");
+        if (facebookSection.Exists())
+        {
+            authBuilder.AddFacebook(options =>
+            {
+                options.AppId = facebookSection["AppId"]!;
+                options.AppSecret = facebookSection["AppSecret"]!;
+            });
+        }
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers authentication and identity application services.
     /// </summary>
     private static IServiceCollection _AddServices(this IServiceCollection services)
@@ -169,6 +205,7 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ISignInService, SignInService>();
+        services.AddScoped<IExternalAuthService, ExternalAuthService>();
 
         // Identity abstractions (Application layer interfaces)
         services.AddScoped<IIdentityUserService, IdentityUserService>();
