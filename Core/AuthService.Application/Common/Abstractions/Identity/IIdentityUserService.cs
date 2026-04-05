@@ -142,4 +142,16 @@ public interface IIdentityUserService
         Guid userId,
         List<UserRoleDto> roles,
         CancellationToken cancellationToken = default);
+
+    // ============ External Logins ============
+
+    /// <summary>
+    /// Gets external login providers linked to user's account.
+    /// </summary>
+    /// <remarks>
+    /// Returns list of OAuth providers (Google, Facebook, etc.) that user has linked.
+    /// </remarks>
+    Task<Result<List<UserExternalLoginDto>>> GetExternalLoginsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

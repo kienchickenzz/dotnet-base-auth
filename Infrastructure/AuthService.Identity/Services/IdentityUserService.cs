@@ -477,6 +477,30 @@ internal sealed class IdentityUserService : IIdentityUserService
         return Result.Success();
     }
 
+    // ============ External Logins ============
+
+    /// <inheritdoc />
+    public async Task<Result<List<UserExternalLoginDto>>> GetExternalLoginsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return Result.Failure<List<UserExternalLoginDto>>(UserErrors.NotFound);
+
+        // Query AspNetUserLogins table via UserManager
+        var logins = await _userManager.GetLoginsAsync(user);
+
+        var result = logins.Select(l => new UserExternalLoginDto
+        {
+            LoginProvider = l.LoginProvider,
+            ProviderKey = l.ProviderKey,
+            ProviderDisplayName = l.ProviderDisplayName ?? l.LoginProvider
+        }).ToList();
+
+        return result;
+    }
+
     #endregion
 
     #region Private Helpers

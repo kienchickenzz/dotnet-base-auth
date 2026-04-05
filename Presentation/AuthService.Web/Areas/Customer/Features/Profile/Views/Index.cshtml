@@ -1,0 +1,124 @@
+@model AuthService.Web.Areas.Customer.Features.Profile.Models.ProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Profile Image -->
+                    <div class="text-center mb-4">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="Profile"
+                                 class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center"
+                                 style="width: 120px; height: 120px;">
+                                <span class="text-white fs-1">@Model.FirstName?.FirstOrDefault()</span>
+                            </div>
+                        }
+                        <h3 class="mt-3">@Model.FullName</h3>
+                    </div>
+
+                    <!-- Profile Details -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Email</label>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">@Model.Email</span>
+                                @if (Model.EmailConfirmed)
+                                {
+                                    <span class="badge bg-success">Verified</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Not Verified</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Phone Number</label>
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                                {
+                                    <span class="me-2">@Model.PhoneNumber</span>
+                                    @if (Model.PhoneNumberConfirmed)
+                                    {
+                                        <span class="badge bg-success">Verified</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Not Verified</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not provided</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">First Name</label>
+                            <p class="mb-0">@Model.FirstName</p>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Last Name</label>
+                            <p class="mb-0">@Model.LastName</p>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label text-muted">Roles</label>
+                            <div>
+                                @if (Model.Roles.Any())
+                                {
+                                    @foreach (var role in Model.Roles)
+                                    {
+                                        <span class="badge bg-info me-1">@role</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No roles assigned</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label text-muted">Linked Accounts</label>
+                            <div>
+                                @if (Model.LinkedProviders.Any())
+                                {
+                                    @foreach (var provider in Model.LinkedProviders)
+                                    {
+                                        <span class="badge bg-secondary me-1">@provider</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No external accounts linked</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <a asp-controller="Home" asp-action="Index" asp-area="" class="btn btn-outline-secondary">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -38,6 +38,7 @@ public class LoginController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        // TODO: Thêm điều kiện check IsLocalUrl để tránh open redirect
         // Redirect to home if already logged in
         if (User.Identity?.IsAuthenticated == true)
         {
@@ -88,7 +89,22 @@ public class LoginController : Controller
 
         _logger.LogInformation("User {Email} logged in.", model.Email);
 
-        return LocalRedirect(model.ReturnUrl);
+        return _RedirectAfterLogin(model.ReturnUrl);
+    }
+
+    /// <summary>
+    /// Redirects to Profile if returnUrl is home, otherwise LocalRedirect.
+    /// </summary>
+    /// <remarks>
+    /// Default post-login destination is Profile page instead of landing page.
+    /// If user came from a specific page (e.g., /products), redirect back there.
+    /// </remarks>
+    private IActionResult _RedirectAfterLogin(string? returnUrl)
+    {
+        if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "~/")
+            return RedirectToAction("Index", "Profile", new { area = "Customer" });
+
+        return LocalRedirect(returnUrl);
     }
 
     /// <summary>

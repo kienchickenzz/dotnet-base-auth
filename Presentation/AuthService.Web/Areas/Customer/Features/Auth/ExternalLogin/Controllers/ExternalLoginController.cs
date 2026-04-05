@@ -85,10 +85,9 @@ public class ExternalLoginController : Controller
         // Existing user - set cookies and redirect
         if (response.IsExistingUser && response.Token != null)
         {
-            // TODO: Redirect về trang home đã đăng nhập thay vì landing page
             _SetTokenCookies(response.Token.Token, response.Token.RefreshToken);
             _logger.LogInformation("User logged in via external provider.");
-            return LocalRedirect(returnUrl);
+            return _RedirectAfterLogin(returnUrl);
         }
 
         // New user - show confirmation form
@@ -145,8 +144,22 @@ public class ExternalLoginController : Controller
         _SetTokenCookies(result.Value.Token, result.Value.RefreshToken);
         _logger.LogInformation("User {Email} created via external provider.", model.Email);
 
-        // TODO: Redirect về trang home đã đăng nhập thay vì landing page
-        return LocalRedirect(model.ReturnUrl);
+        return _RedirectAfterLogin(model.ReturnUrl);
+    }
+
+    /// <summary>
+    /// Redirects to Profile if returnUrl is home, otherwise LocalRedirect.
+    /// </summary>
+    /// <remarks>
+    /// Default post-login destination is Profile page instead of landing page.
+    /// If user came from a specific page (e.g., /products), redirect back there.
+    /// </remarks>
+    private IActionResult _RedirectAfterLogin(string? returnUrl)
+    {
+        if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "~/")
+            return RedirectToAction("Index", "Profile", new { area = "Customer" });
+
+        return LocalRedirect(returnUrl);
     }
 
     /// <summary>
