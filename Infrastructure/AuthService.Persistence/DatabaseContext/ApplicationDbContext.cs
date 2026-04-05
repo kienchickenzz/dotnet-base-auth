@@ -35,6 +35,8 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
 
         base.OnModelCreating(builder);
 
+        // Auto-discover and apply all IEntityTypeConfiguration<T> implementations
+        // in this assembly using reflection (no explicit registration needed)
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 

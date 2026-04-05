@@ -54,6 +54,9 @@ public class ApplicationIdentityDbContext : IdentityDbContext<
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Auto-discover and apply all IEntityTypeConfiguration<T> implementations
+        // in this assembly using reflection (no explicit registration needed)
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationIdentityDbContext).Assembly);
 
         builder.HasDefaultSchema("Identity");
