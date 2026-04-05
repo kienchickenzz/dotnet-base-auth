@@ -1,5 +1,6 @@
 ﻿namespace AuthService.Identity.Models;
 
+// TODO: Đây là deadcode??
 public class RegisterUserEmailModel
 {
     public string UserName { get; set; } = default!;
