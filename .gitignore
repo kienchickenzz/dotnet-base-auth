@@ -18,3 +18,6 @@ CLAUDE.md
 **/logs
 **/log
 **/*.log
+
+# App settings
+**/appsettings*.json

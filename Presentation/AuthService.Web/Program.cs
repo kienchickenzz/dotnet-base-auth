@@ -10,6 +10,13 @@ using AuthService.Web.Infrastructure.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load environment-specific config (e.g., appsettings.Local.json for sensitive credentials)
+// This file should be in .gitignore to avoid committing secrets
+builder.Configuration.AddJsonFile(
+    $"appsettings.{builder.Environment.EnvironmentName}.json",
+    optional: true,
+    reloadOnChange: true);
+
 // Add services to the container.
 // MVC with Feature Folder pattern for Areas
 builder.Services.AddFeatureFoldersMvc("AuthService.Web");
@@ -30,7 +37,8 @@ var app = builder.Build();
 await app.Services.InitializeIdentityDatabaseAsync();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+// Use exception handler and HSTS only in Production (not in Development or Local)
+if (app.Environment.IsProduction())
 {
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
