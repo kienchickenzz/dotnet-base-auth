@@ -1,9 +1,9 @@
 /**
- * RegisterController handles customer registration using JWT.
+ * RegisterController handles user self-registration.
  *
- * <p>Thin controller - delegates to MediatR, stores JWT in HttpOnly cookie.</p>
+ * <p>Only creates regular users. Admin accounts are created via Admin Dashboard.</p>
  */
-namespace AuthService.Web.Areas.Customer.Features.Auth.Register.Controllers;
+namespace AuthService.Web.Controllers.Auth;
 
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +12,12 @@ using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Features.Identities.Authentication.Commands.Login;
 using AuthService.Application.Features.Identities.Users.Commands.CreateUser;
 using AuthService.Identity.Middlewares;
-using AuthService.Web.Areas.Customer.Features.Auth.Register.Models;
+using AuthService.Web.Models.Auth;
 
 
 /// <summary>
-/// Controller for customer registration functionality.
+/// Shared controller for user registration.
 /// </summary>
-[Area("Customer")]
 public class RegisterController : Controller
 {
     private readonly IMediator _mediator;
@@ -44,7 +43,6 @@ public class RegisterController : Controller
     [HttpGet]
     public async Task<IActionResult> Register(string? returnUrl = null)
     {
-        // Redirect if already logged in
         if (User.Identity?.IsAuthenticated == true)
             return RedirectToAction("Index", "Home", new { area = "" });
 
@@ -54,7 +52,7 @@ public class RegisterController : Controller
             ExternalLogins = await _externalAuthService.GetExternalAuthSchemesAsync()
         };
 
-        return View(model);
+        return View("~/Views/Auth/Register.cshtml", model);
     }
 
     /// <summary>
@@ -67,17 +65,15 @@ public class RegisterController : Controller
         model.ExternalLogins = await _externalAuthService.GetExternalAuthSchemesAsync();
 
         if (!ModelState.IsValid)
-            return View(model);
+            return View("~/Views/Auth/Register.cshtml", model);
 
-        // Get origin for confirmation email
         var origin = $"{Request.Scheme}://{Request.Host.Value}";
 
-        // Create user via CQRS
         var createCommand = new CreateUserCommand(
             model.FirstName,
             model.LastName,
             model.Email,
-            model.Email, // UserName = Email
+            model.Email,
             model.Password,
             model.ConfirmPassword,
             model.PhoneNumber,
@@ -88,7 +84,7 @@ public class RegisterController : Controller
         if (createResult.IsFailure)
         {
             ModelState.AddModelError(string.Empty, createResult.Error.Name);
-            return View(model);
+            return View("~/Views/Auth/Register.cshtml", model);
         }
 
         _logger.LogInformation("User {Email} registered successfully.", model.Email);
@@ -101,12 +97,12 @@ public class RegisterController : Controller
         if (loginResult.IsSuccess)
         {
             _SetTokenCookies(loginResult.Value.Token, loginResult.Value.RefreshToken);
-            return LocalRedirect(model.ReturnUrl);
+            // New user = Customer, redirect to Customer Profile
+            return RedirectToAction("Index", "Profile", new { area = "Customer" });
         }
 
-        // If auto-login fails, redirect to login page
         TempData["Success"] = "Registration successful! Please login.";
-        return RedirectToAction("Login", "Login", new { area = "Customer", returnUrl = model.ReturnUrl });
+        return RedirectToAction("Login", "Login");
     }
 
     /// <summary>
@@ -118,7 +114,8 @@ public class RegisterController : Controller
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Strict
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
         };
 
         Response.Cookies.Append(JwtCookieMiddleware.AccessTokenCookieName, accessToken, cookieOptions);

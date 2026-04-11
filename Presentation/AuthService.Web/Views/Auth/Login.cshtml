@@ -1,4 +1,4 @@
-@model AuthService.Web.Areas.Customer.Features.Auth.Login.Models.LoginViewModel
+@model AuthService.Web.Models.Auth.LoginViewModel
 
 @{
     ViewData["Title"] = "Log in";
@@ -40,6 +40,9 @@
                             <div>
                                 <input type="hidden" asp-for="ReturnUrl" />
                                 <button id="login-submit" type="submit" class="w-100 btn btn-primary">Log in</button>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <p>Don't have an account? <a asp-controller="Register" asp-action="Register">Register here</a></p>
                             </div>
                         </form>
                     </section>

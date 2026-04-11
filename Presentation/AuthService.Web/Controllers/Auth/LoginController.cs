@@ -1,21 +1,20 @@
 /**
- * LoginController handles customer authentication using JWT.
+ * LoginController handles user authentication using JWT.
  *
- * <p>Thin controller - delegates to MediatR, stores JWT in HttpOnly cookie.</p>
+ * <p>Shared controller - redirects to appropriate area based on user role.</p>
  */
 
 using AuthService.Application.Features.Identities.Authentication.Commands.Login;
 using AuthService.Identity.Middlewares;
-using AuthService.Web.Areas.Customer.Features.Auth.Login.Models;
+using AuthService.Web.Models.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AuthService.Web.Areas.Customer.Features.Auth.Login.Controllers;
+namespace AuthService.Web.Controllers.Auth;
 
 /// <summary>
-/// Controller for customer login functionality using JWT.
+/// Shared controller for user login functionality using JWT.
 /// </summary>
-[Area("Customer")]
 public class LoginController : Controller
 {
     private readonly IMediator _mediator;
@@ -38,19 +37,16 @@ public class LoginController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
-        // TODO: Thêm điều kiện check IsLocalUrl để tránh open redirect
-        // Redirect to home if already logged in
+        // Redirect by role if already logged in
         if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToAction("Index", "Home", new { area = "" });
-        }
+            return _RedirectByRole();
 
         var model = new LoginViewModel
         {
             ReturnUrl = returnUrl ?? Url.Content("~/")
         };
 
-        return View(model);
+        return View("~/Views/Auth/Login.cshtml", model);
     }
 
     /// <summary>
@@ -62,12 +58,10 @@ public class LoginController : Controller
         model.ReturnUrl ??= Url.Content("~/");
 
         if (!ModelState.IsValid)
-            return View(model);
+            return View("~/Views/Auth/Login.cshtml", model);
 
-        // Get client IP address
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        // Call LoginCommand (reuse existing JWT infrastructure)
         var command = new LoginCommand(
             model.Email,
             model.Password,
@@ -75,16 +69,14 @@ public class LoginController : Controller
 
         var result = await _mediator.Send(command);
 
-        // Handle failure
         if (result.IsFailure)
         {
             ModelState.AddModelError(string.Empty, result.Error.Name);
-            return View(model);
+            return View("~/Views/Auth/Login.cshtml", model);
         }
 
         var tokenResponse = result.Value;
 
-        // Store JWT in HttpOnly cookie
         _SetTokenCookies(tokenResponse.Token, tokenResponse.RefreshToken, model.RememberMe);
 
         _logger.LogInformation("User {Email} logged in.", model.Email);
@@ -93,27 +85,11 @@ public class LoginController : Controller
     }
 
     /// <summary>
-    /// Redirects to Profile if returnUrl is home, otherwise LocalRedirect.
-    /// </summary>
-    /// <remarks>
-    /// Default post-login destination is Profile page instead of landing page.
-    /// If user came from a specific page (e.g., /products), redirect back there.
-    /// </remarks>
-    private IActionResult _RedirectAfterLogin(string? returnUrl)
-    {
-        if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "~/")
-            return RedirectToAction("Index", "Profile", new { area = "Customer" });
-
-        return LocalRedirect(returnUrl);
-    }
-
-    /// <summary>
     /// Logs out the current user by clearing cookies.
     /// </summary>
     [HttpPost]
     public IActionResult Logout()
     {
-        // Clear cookies
         Response.Cookies.Delete(JwtCookieMiddleware.AccessTokenCookieName);
         Response.Cookies.Delete(JwtCookieMiddleware.RefreshTokenCookieName);
 
@@ -123,18 +99,32 @@ public class LoginController : Controller
     }
 
     /// <summary>
+    /// Redirects user based on returnUrl or role.
+    /// </summary>
+    private IActionResult _RedirectAfterLogin(string? returnUrl)
+    {
+        // If valid returnUrl exists, redirect there
+        if (!string.IsNullOrEmpty(returnUrl) && returnUrl != "/" && returnUrl != "~/")
+            return LocalRedirect(returnUrl);
+
+        // No returnUrl - redirect based on role
+        return _RedirectByRole();
+    }
+
+    /// <summary>
+    /// Redirects user to appropriate area based on their role.
+    /// </summary>
+    private IActionResult _RedirectByRole()
+    {
+        if (User.IsInRole("Admin"))
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+
+        return RedirectToAction("Index", "Profile", new { area = "Customer" });
+    }
+
+    /// <summary>
     /// Sets JWT tokens in HttpOnly cookies.
     /// </summary>
-    /// <remarks>
-    /// Cookie settings explained:
-    /// - HttpOnly: Prevents JavaScript access (XSS protection)
-    /// - Secure: Cookie only sent over HTTPS
-    /// - Path="/": Cookie available for all paths (default is current request path)
-    /// - SameSite=Lax: Consistent with ExternalLoginController. Sends cookies on
-    ///   top-level navigations while protecting against CSRF on cross-site POST.
-    ///   Note: Strict would also work here, but Lax is used for consistency.
-    /// - Expires: Session cookie (null) or persistent (7 days) based on RememberMe.
-    /// </remarks>
     private void _SetTokenCookies(string accessToken, string refreshToken, bool rememberMe)
     {
         var cookieOptions = new CookieOptions

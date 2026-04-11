@@ -5,7 +5,7 @@
         <span class="nav-link text-light">Hello @User.Identity.Name!</span>
     </li>
     <li class="nav-item">
-        <form class="form-inline" asp-area="Customer" asp-controller="Login" asp-action="Logout">
+        <form class="form-inline" asp-area="" asp-controller="Login" asp-action="Logout">
             <button type="submit" class="nav-link btn btn-link text-light border-0">Logout</button>
         </form>
     </li>
@@ -13,10 +13,10 @@
 else
 {
     <li class="nav-item">
-        <a class="nav-link text-light" asp-area="Customer" asp-controller="Register" asp-action="Register">Register</a>
+        <a class="nav-link text-light" asp-area="" asp-controller="Register" asp-action="Register">Register</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-light" asp-area="Customer" asp-controller="Login" asp-action="Login">Login</a>
+        <a class="nav-link text-light" asp-area="" asp-controller="Login" asp-action="Login">Login</a>
     </li>
 }
 </ul>

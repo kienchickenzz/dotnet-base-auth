@@ -1,4 +1,4 @@
-@model AuthService.Web.Areas.Customer.Features.Auth.Register.Models.RegisterViewModel
+@model AuthService.Web.Models.Auth.RegisterViewModel
 @{
     ViewData["Title"] = "Register";
 }
@@ -18,7 +18,7 @@
             <section>
                 <h3>Use another service to register.</h3>
                 <hr />
-                <form asp-area="Customer" asp-controller="ExternalLogin" asp-action="Challenge"
+                <form asp-controller="ExternalLogin" asp-action="Challenge"
                       asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
                     <div>
                         <p>
@@ -92,7 +92,7 @@
                     <div class="col-12 text-center mt-3">
                         <p>
                             Already have an account?
-                            <a asp-area="Customer" asp-controller="Login" asp-action="Login">Login here</a>
+                            <a asp-controller="Login" asp-action="Login">Login here</a>
                         </p>
                     </div>
                 </form>

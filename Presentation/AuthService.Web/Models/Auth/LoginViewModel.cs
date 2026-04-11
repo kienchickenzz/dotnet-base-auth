@@ -1,15 +1,15 @@
 /**
- * LoginViewModel represents the data for customer login form.
+ * LoginViewModel represents the data for login form.
  *
  * <p>Contains user credentials for JWT-based authentication.</p>
  */
 
 using System.ComponentModel.DataAnnotations;
 
-namespace AuthService.Web.Areas.Customer.Features.Auth.Login.Models;
+namespace AuthService.Web.Models.Auth;
 
 /// <summary>
-/// ViewModel for customer login page.
+/// ViewModel for login page.
 /// </summary>
 public class LoginViewModel
 {

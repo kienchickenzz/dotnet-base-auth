@@ -1,9 +1,9 @@
 /**
  * ExternalLoginController handles OAuth authentication flow.
  *
- * <p>Manages challenge, callback, and confirmation for external providers.</p>
+ * <p>Shared controller - redirects based on user role after OAuth.</p>
  */
-namespace AuthService.Web.Areas.Customer.Features.Auth.ExternalLogin.Controllers;
+namespace AuthService.Web.Controllers.Auth;
 
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +11,12 @@ using Microsoft.AspNetCore.Mvc;
 using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Features.Identities.Authentication.Commands.ExternalLogin;
 using AuthService.Identity.Middlewares;
-using AuthService.Web.Areas.Customer.Features.Auth.ExternalLogin.Models;
+using AuthService.Web.Models.Auth;
 
 
 /// <summary>
-/// Controller for external login (OAuth) functionality.
+/// Shared controller for external login (OAuth) functionality.
 /// </summary>
-[Area("Customer")]
 public class ExternalLoginController : Controller
 {
     private readonly IMediator _mediator;
@@ -42,7 +41,7 @@ public class ExternalLoginController : Controller
     /// </summary>
     [HttpGet]
     public IActionResult Index() =>
-        RedirectToAction("Login", "Login", new { area = "Customer" });
+        RedirectToAction("Login", "Login");
 
     /// <summary>
     /// Initiates external authentication challenge.
@@ -50,7 +49,7 @@ public class ExternalLoginController : Controller
     [HttpPost]
     public IActionResult Challenge(string provider, string? returnUrl = null)
     {
-        var redirectUrl = Url.Action(nameof(Callback), "ExternalLogin", new { area = "Customer", returnUrl });
+        var redirectUrl = Url.Action(nameof(Callback), "ExternalLogin", new { returnUrl });
         var properties = _externalAuthService.ConfigureExternalAuthProperties(provider, redirectUrl!);
         return new ChallengeResult(provider, properties);
     }
@@ -66,23 +65,22 @@ public class ExternalLoginController : Controller
         if (remoteError != null)
         {
             TempData["Error"] = $"Error from external provider: {remoteError}";
-            return RedirectToAction("Login", "Login", new { area = "Customer", returnUrl });
+            return RedirectToAction("Login", "Login", new { returnUrl });
         }
 
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var command = new ExternalLoginCallbackCommand(ipAddress);
         var result = await _mediator.Send(command);
 
-        // TODO: Trường hợp user hủy login trên provider thì sao? remoteError có được set không?
         if (result.IsFailure)
         {
             TempData["Error"] = result.Error.Name;
-            return RedirectToAction("Login", "Login", new { area = "Customer", returnUrl });
+            return RedirectToAction("Login", "Login", new { returnUrl });
         }
 
         var response = result.Value;
 
-        // Existing user - set cookies and redirect
+        // Existing user - set cookies and redirect by role
         if (response.IsExistingUser && response.Token != null)
         {
             _SetTokenCookies(response.Token.Token, response.Token.RefreshToken);
@@ -102,11 +100,11 @@ public class ExternalLoginController : Controller
                 ReturnUrl = returnUrl
             };
 
-            return View("ExternalLogin", model);
+            return View("~/Views/Auth/ExternalLogin.cshtml", model);
         }
 
         TempData["Error"] = "External login failed.";
-        return RedirectToAction("Login", "Login", new { area = "Customer", returnUrl });
+        return RedirectToAction("Login", "Login", new { returnUrl });
     }
 
     /// <summary>
@@ -118,7 +116,7 @@ public class ExternalLoginController : Controller
         model.ReturnUrl ??= Url.Content("~/");
 
         if (!ModelState.IsValid)
-            return View("ExternalLogin", model);
+            return View("~/Views/Auth/ExternalLogin.cshtml", model);
 
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var origin = $"{Request.Scheme}://{Request.Host.Value}";
@@ -137,49 +135,41 @@ public class ExternalLoginController : Controller
         if (result.IsFailure)
         {
             ModelState.AddModelError(string.Empty, result.Error.Name);
-            return View("ExternalLogin", model);
+            return View("~/Views/Auth/ExternalLogin.cshtml", model);
         }
 
-        // Set cookies and redirect
         _SetTokenCookies(result.Value.Token, result.Value.RefreshToken);
         _logger.LogInformation("User {Email} created via external provider.", model.Email);
 
-        return _RedirectAfterLogin(model.ReturnUrl);
+        // New user from OAuth = Customer (cannot be Admin via OAuth)
+        return RedirectToAction("Index", "Profile", new { area = "Customer" });
     }
 
     /// <summary>
-    /// Redirects to Profile if returnUrl is home, otherwise LocalRedirect.
+    /// Redirects user based on returnUrl or role.
     /// </summary>
-    /// <remarks>
-    /// Default post-login destination is Profile page instead of landing page.
-    /// If user came from a specific page (e.g., /products), redirect back there.
-    /// </remarks>
     private IActionResult _RedirectAfterLogin(string? returnUrl)
     {
-        if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "~/")
-            return RedirectToAction("Index", "Profile", new { area = "Customer" });
+        if (!string.IsNullOrEmpty(returnUrl) && returnUrl != "/" && returnUrl != "~/")
+            return LocalRedirect(returnUrl);
 
-        return LocalRedirect(returnUrl);
+        return _RedirectByRole();
+    }
+
+    /// <summary>
+    /// Redirects user to appropriate area based on their role.
+    /// </summary>
+    private IActionResult _RedirectByRole()
+    {
+        if (User.IsInRole("Admin"))
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+
+        return RedirectToAction("Index", "Profile", new { area = "Customer" });
     }
 
     /// <summary>
     /// Sets JWT tokens in HttpOnly cookies.
     /// </summary>
-    /// <remarks>
-    /// Cookie settings explained:
-    /// - HttpOnly: Prevents JavaScript access (XSS protection)
-    /// - Secure: Cookie only sent over HTTPS
-    /// - Path="/": Cookie available for all paths (default is current request path)
-    /// - SameSite=Lax: IMPORTANT for OAuth flows!
-    ///
-    ///   Why not Strict? After OAuth redirect (Google → callback → home), the browser
-    ///   considers this a "cross-site initiated" navigation. With SameSite=Strict,
-    ///   cookies are NOT sent on the first redirect, causing the navbar to show
-    ///   unauthenticated state even though login succeeded.
-    ///
-    ///   Lax sends cookies on top-level GET navigations/redirects while still
-    ///   protecting against CSRF on cross-site POST requests.
-    /// </remarks>
     private void _SetTokenCookies(string accessToken, string refreshToken)
     {
         var cookieOptions = new CookieOptions
