@@ -40,4 +40,10 @@ public sealed record UserDto
 
     /// <summary>Whether phone is confirmed.</summary>
     public bool PhoneNumberConfirmed { get; init; }
+
+    /// <summary>User's assigned roles.</summary>
+    public IReadOnlyList<string> Roles { get; init; } = [];
+
+    /// <summary>User's permissions derived from roles.</summary>
+    public IReadOnlyList<string> Permissions { get; init; } = [];
 }

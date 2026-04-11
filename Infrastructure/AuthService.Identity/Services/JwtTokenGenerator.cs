@@ -23,6 +23,11 @@ using AuthService.Identity.Settings;
 /// </summary>
 internal sealed class JwtTokenGenerator : IJwtTokenGenerator
 {
+    /// <summary>
+    /// Claim type for permissions.
+    /// </summary>
+    public const string PermissionClaimType = "Permission";
+
     private readonly JwtSettings _jwtSettings;
 
     public JwtTokenGenerator(IOptions<JwtSettings> jwtSettings)
@@ -38,10 +43,16 @@ internal sealed class JwtTokenGenerator : IJwtTokenGenerator
         string? lastName,
         string? phoneNumber,
         string? imageUrl,
-        string ipAddress)
+        string ipAddress,
+        IEnumerable<string> roles,
+        IEnumerable<string> permissions)
     {
-        var claims = BuildClaims(userId, email, firstName, lastName, phoneNumber, imageUrl, ipAddress);
-        var signingCredentials = GetSigningCredentials();
+        var claims = _BuildClaims(
+            userId, email, firstName, lastName,
+            phoneNumber, imageUrl, ipAddress,
+            roles, permissions);
+
+        var signingCredentials = _GetSigningCredentials();
 
         var token = new JwtSecurityToken(
             claims: claims,
@@ -103,18 +114,20 @@ internal sealed class JwtTokenGenerator : IJwtTokenGenerator
     }
 
     /// <summary>
-    /// Builds claims for the JWT token.
+    /// Builds claims for the JWT token including roles and permissions.
     /// </summary>
-    private static IEnumerable<Claim> BuildClaims(
+    private static List<Claim> _BuildClaims(
         Guid userId,
         string email,
         string? firstName,
         string? lastName,
         string? phoneNumber,
         string? imageUrl,
-        string ipAddress)
+        string ipAddress,
+        IEnumerable<string> roles,
+        IEnumerable<string> permissions)
     {
-        return new List<Claim>
+        var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId.ToString()),
             new(ClaimTypes.Email, email),
@@ -125,12 +138,26 @@ internal sealed class JwtTokenGenerator : IJwtTokenGenerator
             new(Claims.ImageUrl, imageUrl ?? string.Empty),
             new(ClaimTypes.MobilePhone, phoneNumber ?? string.Empty)
         };
+
+        // Add role claims
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        // Add permission claims
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim(PermissionClaimType, permission));
+        }
+
+        return claims;
     }
 
     /// <summary>
     /// Gets signing credentials using the configured secret key.
     /// </summary>
-    private SigningCredentials GetSigningCredentials()
+    private SigningCredentials _GetSigningCredentials()
     {
         var secret = Encoding.UTF8.GetBytes(_jwtSettings.Key);
         return new SigningCredentials(

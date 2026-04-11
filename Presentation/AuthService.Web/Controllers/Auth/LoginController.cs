@@ -81,7 +81,8 @@ public class LoginController : Controller
 
         _logger.LogInformation("User {Email} logged in.", model.Email);
 
-        return _RedirectAfterLogin(model.ReturnUrl);
+        // Use roles from response since User.IsInRole() won't work until next request
+        return _RedirectAfterLogin(model.ReturnUrl, tokenResponse.Roles);
     }
 
     /// <summary>
@@ -101,22 +102,28 @@ public class LoginController : Controller
     /// <summary>
     /// Redirects user based on returnUrl or role.
     /// </summary>
-    private IActionResult _RedirectAfterLogin(string? returnUrl)
+    /// <param name="returnUrl">Return URL if specified.</param>
+    /// <param name="roles">User roles from token response (null for existing session).</param>
+    private IActionResult _RedirectAfterLogin(string? returnUrl, IReadOnlyList<string>? roles = null)
     {
         // If valid returnUrl exists, redirect there
         if (!string.IsNullOrEmpty(returnUrl) && returnUrl != "/" && returnUrl != "~/")
             return LocalRedirect(returnUrl);
 
         // No returnUrl - redirect based on role
-        return _RedirectByRole();
+        return _RedirectByRole(roles);
     }
 
     /// <summary>
     /// Redirects user to appropriate area based on their role.
     /// </summary>
-    private IActionResult _RedirectByRole()
+    /// <param name="roles">User roles from token response (null to check HttpContext.User).</param>
+    private IActionResult _RedirectByRole(IReadOnlyList<string>? roles = null)
     {
-        if (User.IsInRole("Admin"))
+        // Check roles from parameter (just logged in) or User claims (existing session)
+        var isAdmin = roles?.Contains("Admin") ?? User.IsInRole("Admin");
+
+        if (isAdmin)
             return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
 
         return RedirectToAction("Index", "Profile", new { area = "Customer" });

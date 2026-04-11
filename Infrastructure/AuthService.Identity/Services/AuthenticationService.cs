@@ -6,10 +6,12 @@
 namespace AuthService.Identity.Services;
 
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Features.Identities.Authentication.Services;
 using AuthService.Domain.Common;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
 
@@ -20,13 +22,16 @@ using AuthService.Identity.Entities;
 internal sealed class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ApplicationIdentityDbContext _db;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         ApplicationIdentityDbContext db)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
         _db = db;
     }
 
@@ -61,7 +66,7 @@ internal sealed class AuthenticationService : IAuthenticationService
             return Result.Failure<AuthenticatedUserInfo>(AuthenticationErrors.EmailNotConfirmed);
         }
 
-        return _MapToUserInfo(user);
+        return await _MapToUserInfoAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -75,7 +80,7 @@ internal sealed class AuthenticationService : IAuthenticationService
             return Result.Failure<AuthenticatedUserInfo>(AuthenticationErrors.InvalidCredentials);
         }
 
-        return _MapToUserInfo(user);
+        return await _MapToUserInfoAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -139,16 +144,52 @@ internal sealed class AuthenticationService : IAuthenticationService
     }
 
     /// <summary>
-    /// Maps ApplicationUser to AuthenticatedUserInfo.
+    /// Maps ApplicationUser to AuthenticatedUserInfo with roles and permissions.
     /// </summary>
-    private static AuthenticatedUserInfo _MapToUserInfo(ApplicationUser user)
+    private async Task<AuthenticatedUserInfo> _MapToUserInfoAsync(
+        ApplicationUser user,
+        CancellationToken cancellationToken)
     {
+        // Fetch user roles
+        var roles = await _userManager.GetRolesAsync(user);
+
+        // Fetch permissions from role claims
+        var permissions = await _GetPermissionsAsync(roles, cancellationToken);
+
         return new AuthenticatedUserInfo(
             user.Id,
             user.Email!,
             user.FirstName,
             user.LastName,
             user.PhoneNumber,
-            user.ImageUrl);
+            user.ImageUrl,
+            roles.ToList(),
+            permissions);
+    }
+
+    /// <summary>
+    /// Gets permissions from role claims for the specified roles.
+    /// </summary>
+    private async Task<List<string>> _GetPermissionsAsync(
+        IList<string> roleNames,
+        CancellationToken cancellationToken)
+    {
+        var permissions = new List<string>();
+
+        var roles = await _roleManager.Roles
+            .Where(r => roleNames.Contains(r.Name!))
+            .ToListAsync(cancellationToken);
+
+        foreach (var role in roles)
+        {
+            var roleClaims = await _db.RoleClaims
+                .Where(rc => rc.RoleId == role.Id && rc.ClaimType == Claims.Permission)
+                .Select(rc => rc.ClaimValue!)
+                .ToListAsync(cancellationToken);
+
+            permissions.AddRange(roleClaims);
+        }
+
+        return permissions.Distinct().ToList();
     }
 }

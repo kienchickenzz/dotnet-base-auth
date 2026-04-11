@@ -16,6 +16,7 @@ using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Application.Features.Identities.Roles;
 using AuthService.Domain.Common;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Domain.Events.Identity;
 using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
@@ -56,14 +57,19 @@ internal sealed class IdentityUserService : IIdentityUserService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return users.Select(_MapToDto).ToList();
+        var result = new List<UserDto>();
+        foreach (var user in users)
+        {
+            result.Add(await _MapToDtoAsync(user, cancellationToken));
+        }
+
+        return result;
     }
 
     /// <inheritdoc />
     public async Task<Result<UserDto>> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _userManager.Users
-            .AsNoTracking()
             .Where(u => u.Id == userId)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -72,7 +78,7 @@ internal sealed class IdentityUserService : IIdentityUserService
             return Result.Failure<UserDto>(UserErrors.NotFound);
         }
 
-        return _MapToDto(user);
+        return await _MapToDtoAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -85,7 +91,7 @@ internal sealed class IdentityUserService : IIdentityUserService
             return Result.Failure<UserDto>(UserErrors.NotFound);
         }
 
-        return _MapToDto(user);
+        return await _MapToDtoAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -506,10 +512,15 @@ internal sealed class IdentityUserService : IIdentityUserService
     #region Private Helpers
 
     /// <summary>
-    /// Maps ApplicationUser to UserDto.
+    /// Maps ApplicationUser to UserDto with roles and permissions.
     /// </summary>
-    private static UserDto _MapToDto(ApplicationUser user)
+    private async Task<UserDto> _MapToDtoAsync(
+        ApplicationUser user,
+        CancellationToken cancellationToken)
     {
+        var roles = await _userManager.GetRolesAsync(user);
+        var permissions = await _GetPermissionsAsync(roles, cancellationToken);
+
         return new UserDto
         {
             Id = user.Id,
@@ -521,8 +532,36 @@ internal sealed class IdentityUserService : IIdentityUserService
             ImageUrl = user.ImageUrl,
             IsActive = user.IsActive,
             EmailConfirmed = user.EmailConfirmed,
-            PhoneNumberConfirmed = user.PhoneNumberConfirmed
+            PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+            Roles = roles.ToList(),
+            Permissions = permissions
         };
+    }
+
+    /// <summary>
+    /// Gets permissions from role claims for the specified roles.
+    /// </summary>
+    private async Task<List<string>> _GetPermissionsAsync(
+        IList<string> roleNames,
+        CancellationToken cancellationToken)
+    {
+        var permissions = new List<string>();
+
+        var roles = await _roleManager.Roles
+            .Where(r => roleNames.Contains(r.Name!))
+            .ToListAsync(cancellationToken);
+
+        foreach (var role in roles)
+        {
+            var roleClaims = await _db.RoleClaims
+                .Where(rc => rc.RoleId == role.Id && rc.ClaimType == Claims.Permission)
+                .Select(rc => rc.ClaimValue!)
+                .ToListAsync(cancellationToken);
+
+            permissions.AddRange(roleClaims);
+        }
+
+        return permissions.Distinct().ToList();
     }
 
     #endregion

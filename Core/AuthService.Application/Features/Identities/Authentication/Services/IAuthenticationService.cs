@@ -74,10 +74,20 @@ public interface IAuthenticationService
 /// <summary>
 /// Authenticated user information returned after credential validation.
 /// </summary>
+/// <param name="Id">User's unique identifier.</param>
+/// <param name="Email">User's email address.</param>
+/// <param name="FirstName">User's first name.</param>
+/// <param name="LastName">User's last name.</param>
+/// <param name="PhoneNumber">User's phone number.</param>
+/// <param name="ImageUrl">User's profile image URL.</param>
+/// <param name="Roles">User's assigned roles.</param>
+/// <param name="Permissions">User's permissions derived from roles.</param>
 public sealed record AuthenticatedUserInfo(
     Guid Id,
     string Email,
     string? FirstName,
     string? LastName,
     string? PhoneNumber,
-    string? ImageUrl);
+    string? ImageUrl,
+    IReadOnlyList<string> Roles,
+    IReadOnlyList<string> Permissions);

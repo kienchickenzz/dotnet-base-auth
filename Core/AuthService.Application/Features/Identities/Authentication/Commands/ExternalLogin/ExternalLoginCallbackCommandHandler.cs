@@ -70,7 +70,7 @@ public sealed class ExternalLoginCallbackCommandHandler
             // user = profile from OUR database, not from Google
             var user = loginResult.Value;
 
-            // Generate JWT using OUR stored data (user.Email may differ from externalInfo.Email)
+            // Generate JWT using OUR stored data with roles and permissions
             var accessToken = _tokenGenerator.GenerateAccessToken(
                 user.Id,
                 user.Email,
@@ -78,7 +78,9 @@ public sealed class ExternalLoginCallbackCommandHandler
                 user.LastName,
                 user.PhoneNumber,
                 user.ImageUrl,
-                request.IpAddress);
+                request.IpAddress,
+                user.Roles,
+                user.Permissions);
 
             var refreshToken = _tokenGenerator.GenerateRefreshToken();
             var refreshTokenExpiry = _tokenGenerator.GetRefreshTokenExpiryTime();
@@ -100,7 +102,8 @@ public sealed class ExternalLoginCallbackCommandHandler
                 Token = new Models.Responses.TokenResponse(
                     accessToken,
                     refreshToken,
-                    refreshTokenExpiry)
+                    refreshTokenExpiry,
+                    user.Roles)
             };
         }
 

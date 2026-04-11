@@ -80,7 +80,7 @@ public sealed class ExternalLoginConfirmationCommandHandler
 
         var user = userResult.Value;
 
-        // Generate JWT
+        // Generate JWT with roles and permissions
         var accessToken = _tokenGenerator.GenerateAccessToken(
             user.Id,
             user.Email,
@@ -88,7 +88,9 @@ public sealed class ExternalLoginConfirmationCommandHandler
             user.LastName,
             user.PhoneNumber,
             user.ImageUrl,
-            request.IpAddress);
+            request.IpAddress,
+            user.Roles,
+            user.Permissions);
 
         var refreshToken = _tokenGenerator.GenerateRefreshToken();
         var refreshTokenExpiry = _tokenGenerator.GetRefreshTokenExpiryTime();
@@ -105,6 +107,6 @@ public sealed class ExternalLoginConfirmationCommandHandler
             user.Email,
             externalInfo.LoginProvider);
 
-        return new TokenResponse(accessToken, refreshToken, refreshTokenExpiry);
+        return new TokenResponse(accessToken, refreshToken, refreshTokenExpiry, user.Roles);
     }
 }

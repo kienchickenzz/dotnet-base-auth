@@ -85,7 +85,8 @@ public class ExternalLoginController : Controller
         {
             _SetTokenCookies(response.Token.Token, response.Token.RefreshToken);
             _logger.LogInformation("User logged in via external provider.");
-            return _RedirectAfterLogin(returnUrl);
+            // Use roles from response since User.IsInRole() won't work until next request
+            return _RedirectAfterLogin(returnUrl, response.Token.Roles);
         }
 
         // New user - show confirmation form
@@ -148,20 +149,26 @@ public class ExternalLoginController : Controller
     /// <summary>
     /// Redirects user based on returnUrl or role.
     /// </summary>
-    private IActionResult _RedirectAfterLogin(string? returnUrl)
+    /// <param name="returnUrl">Return URL if specified.</param>
+    /// <param name="roles">User roles from token response (null for existing session).</param>
+    private IActionResult _RedirectAfterLogin(string? returnUrl, IReadOnlyList<string>? roles = null)
     {
         if (!string.IsNullOrEmpty(returnUrl) && returnUrl != "/" && returnUrl != "~/")
             return LocalRedirect(returnUrl);
 
-        return _RedirectByRole();
+        return _RedirectByRole(roles);
     }
 
     /// <summary>
     /// Redirects user to appropriate area based on their role.
     /// </summary>
-    private IActionResult _RedirectByRole()
+    /// <param name="roles">User roles from token response (null to check HttpContext.User).</param>
+    private IActionResult _RedirectByRole(IReadOnlyList<string>? roles = null)
     {
-        if (User.IsInRole("Admin"))
+        // Check roles from parameter (just logged in) or User claims (existing session)
+        var isAdmin = roles?.Contains("Admin") ?? User.IsInRole("Admin");
+
+        if (isAdmin)
             return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
 
         return RedirectToAction("Index", "Profile", new { area = "Customer" });

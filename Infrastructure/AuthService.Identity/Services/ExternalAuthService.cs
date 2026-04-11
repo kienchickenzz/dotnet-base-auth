@@ -14,12 +14,14 @@ namespace AuthService.Identity.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 using AuthService.Application.Common.Abstractions.Identity;
 using AuthService.Application.Common.Abstractions.Identity.Models;
 using AuthService.Application.Features.Identities.Authentication;
 using AuthService.Application.Features.Identities.Roles;
 using AuthService.Domain.Common;
+using AuthService.Domain.Constants.Identity;
 using AuthService.Identity.DatabaseContext;
 using AuthService.Identity.Entities;
 
@@ -31,15 +33,18 @@ public class ExternalAuthService : IExternalAuthService
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ApplicationIdentityDbContext _db;
 
     public ExternalAuthService(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         ApplicationIdentityDbContext db)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _roleManager = roleManager;
         _db = db;
     }
 
@@ -95,8 +100,8 @@ public class ExternalAuthService : IExternalAuthService
         if (!user.IsActive)
             return Result.Failure<UserDto>(AuthenticationErrors.UserNotActive);
 
-        // Return OUR stored profile, not Google's data
-        return _MapToUserDto(user);
+        // Return OUR stored profile with roles and permissions
+        return await _MapToUserDtoAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -153,10 +158,16 @@ public class ExternalAuthService : IExternalAuthService
     }
 
     /// <summary>
-    /// Maps ApplicationUser to UserDto.
+    /// Maps ApplicationUser to UserDto with roles and permissions.
     /// </summary>
-    private static UserDto _MapToUserDto(ApplicationUser user) =>
-        new UserDto
+    private async Task<UserDto> _MapToUserDtoAsync(
+        ApplicationUser user,
+        CancellationToken cancellationToken)
+    {
+        var roles = await _userManager.GetRolesAsync(user);
+        var permissions = await _GetPermissionsAsync(roles, cancellationToken);
+
+        return new UserDto
         {
             Id = user.Id,
             UserName = user.UserName!,
@@ -167,6 +178,35 @@ public class ExternalAuthService : IExternalAuthService
             ImageUrl = user.ImageUrl,
             IsActive = user.IsActive,
             EmailConfirmed = user.EmailConfirmed,
-            PhoneNumberConfirmed = user.PhoneNumberConfirmed
+            PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+            Roles = roles.ToList(),
+            Permissions = permissions
         };
+    }
+
+    /// <summary>
+    /// Gets permissions from role claims for the specified roles.
+    /// </summary>
+    private async Task<List<string>> _GetPermissionsAsync(
+        IList<string> roleNames,
+        CancellationToken cancellationToken)
+    {
+        var permissions = new List<string>();
+
+        var roles = await _roleManager.Roles
+            .Where(r => roleNames.Contains(r.Name!))
+            .ToListAsync(cancellationToken);
+
+        foreach (var role in roles)
+        {
+            var roleClaims = await _db.RoleClaims
+                .Where(rc => rc.RoleId == role.Id && rc.ClaimType == Claims.Permission)
+                .Select(rc => rc.ClaimValue!)
+                .ToListAsync(cancellationToken);
+
+            permissions.AddRange(roleClaims);
+        }
+
+        return permissions.Distinct().ToList();
+    }
 }

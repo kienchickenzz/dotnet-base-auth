@@ -23,6 +23,8 @@ public interface IJwtTokenGenerator
     /// <param name="phoneNumber">User's phone number (optional).</param>
     /// <param name="imageUrl">User's profile image URL (optional).</param>
     /// <param name="ipAddress">Client IP address.</param>
+    /// <param name="roles">User's roles.</param>
+    /// <param name="permissions">User's permissions.</param>
     /// <returns>JWT access token string.</returns>
     string GenerateAccessToken(
         Guid userId,
@@ -31,7 +33,9 @@ public interface IJwtTokenGenerator
         string? lastName,
         string? phoneNumber,
         string? imageUrl,
-        string ipAddress);
+        string ipAddress,
+        IEnumerable<string> roles,
+        IEnumerable<string> permissions);
 
     /// <summary>
     /// Generates a cryptographically secure refresh token.
