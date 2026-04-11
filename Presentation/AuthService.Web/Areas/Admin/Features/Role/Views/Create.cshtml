@@ -1,0 +1,36 @@
+@model AuthService.Web.Areas.Admin.Features.Role.Models.RoleFormViewModel
+@{
+    ViewData["Title"] = "Create Role";
+}
+
+<div class="container-fluid">
+    <h1 class="mt-4">@ViewData["Title"]</h1>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+            <li class="breadcrumb-item active">Create</li>
+        </ol>
+    </nav>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <partial name="~/Areas/Admin/Features/Role/Views/_RoleForm.cshtml" model="Model" />
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Create Role
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

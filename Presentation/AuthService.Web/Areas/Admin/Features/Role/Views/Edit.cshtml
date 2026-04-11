@@ -1,0 +1,42 @@
+@model AuthService.Web.Areas.Admin.Features.Role.Models.RoleFormViewModel
+@{
+    ViewData["Title"] = "Edit Role";
+}
+
+<div class="container-fluid">
+    <h1 class="mt-4">@ViewData["Title"]: @Model.Name</h1>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        </ol>
+    </nav>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="IsDefault" />
+
+                <partial name="~/Areas/Admin/Features/Role/Views/_RoleForm.cshtml" model="Model" />
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                    <a asp-action="Permissions" asp-route-id="@Model.Id" class="btn btn-info">
+                        <i class="bi bi-key"></i> Manage Permissions
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
